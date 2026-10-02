@@ -104,10 +104,9 @@
       <div class="card"><span class="label">🎓 教育活动</span><div class="metric">4</div><span class="label">课程 / 活动</span></div>
       <div class="card"><span class="label">⚠️ 时间冲突</span><div class="metric">1</div><span class="label">需要重新安排</span></div>
     </section>
-    <section class="section"><div class="grid"><div><div class="section-head"><h2>今天</h2><span class="pill">2026 · 10 · 01</span></div><div class="timeline">
+    <section class="section"><div class="grid"><div><div class="section-head"><h2>今天</h2><span class="pill" id="familyScheduleDate">—</span></div><div class="timeline">
       <div class="event"><div class="time">09:00</div><div><strong><span class="dot"></span>学校</strong><small>Jason · Primary 5 · 当前小学</small></div><span class="pill">学校</span></div>
-      <div class="event"><div class="time">15:30</div><div><strong><span class="dot"></span>英语补习</strong><small>Jason · 英语 · 陈老师</small></div><span class="pill">课程</span></div>
-      <div class="event"><div class="time">16:00</div><div><strong><span class="dot"></span>数学课程</strong><small>Amy · 数学 · 王老师</small></div><span class="pill">课程</span></div>
+      <div id="familyScheduleLessonEvents"><div class="event"><div class="time">—</div><div><strong><span class="dot"></span>课程记录</strong><small>暂无实际课程记录</small></div><span class="pill">课程</span></div></div>
       <div class="event"><div class="time">17:00</div><div><strong><span class="dot"></span>接送回家</strong><small>Jason · 李先生 · SGX 1234 A</small></div><span class="pill">接送</span></div>
       <div class="event"><div class="time">18:30</div><div><strong><span class="dot"></span>家庭晚餐</strong><small>家庭活动</small></div><span class="pill">家庭</span></div>
       <div class="event"><div class="time">20:00</div><div><strong><span class="dot"></span>智能学习</strong><small>Jason · 英语词汇 · 3 分钟练习</small></div><span class="pill">学习</span></div>
@@ -377,6 +376,32 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
 <script>
 (function(){
   function initEducationNav(){
+    function renderFamilyScheduleFromLessons(){
+      const dateEl=document.getElementById('familyScheduleDate');
+      const wrap=document.getElementById('familyScheduleLessonEvents');
+      if(!wrap)return;
+      const now=new Date();
+      const today=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+      if(dateEl)dateEl.textContent=now.getFullYear()+' · '+String(now.getMonth()+1).padStart(2,'0')+' · '+String(now.getDate()).padStart(2,'0');
+      let rel={lessons:[]},students=[];
+      try{rel=JSON.parse(localStorage.getItem('educationOS_relations')||'{}');students=JSON.parse(localStorage.getItem('educationOS_students')||'[]')}catch(e){}
+      const lessons=Array.isArray(rel.lessons)?rel.lessons:[];
+      const todayLessons=lessons.filter(x=>String(x.date)===today).sort((a,b)=>String(a.time||'').localeCompare(String(b.time||'')));
+      const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+      if(!todayLessons.length){
+        wrap.innerHTML='<div class="event"><div class="time">—</div><div><strong><span class="dot"></span>暂无课程记录</strong><small>今天还没有从课程记录产生的实际课程。</small></div><span class="pill">课程</span></div>';
+        return;
+      }
+      wrap.innerHTML=todayLessons.map(l=>{
+        const s=students.find(x=>String(x.id)===String(l.studentId));
+        const teacher=(rel.teachers||[]).find(x=>String(x.id)===String(l.teacherId));
+        const subject=l.subjectId||'课程';
+        const name=s?.name||'学生';
+        const teacherName=teacher?.name||'老师未设置';
+        const status=l.status||'已安排';
+        return '<div class="event"><div class="time">'+esc(l.time||'—')+'</div><div><strong><span class="dot"></span>'+esc(name)+' · '+esc(subject)+'</strong><small>'+esc(teacherName)+' · '+esc(l.duration||'')+' 小时</small></div><span class="pill">'+esc(status)+'</span></div>';
+      }).join('');
+    }
     const map={
       '首页':'dashboard','客户 / 家庭档案':'familyPage','学生完整档案':'childProfile',
       '家庭日程':'familySchedule','接送管理':'transportPage','教育管理':'educationPage',
@@ -388,7 +413,7 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
       btn.addEventListener('click',function(){
         const p=btn.getAttribute('data-page');
         ids.forEach(function(id){const el=document.getElementById(id);if(el)el.style.display='none';});
-        if(p==='客户 / 家庭档案'&&window.renderEducationStudents)window.renderEducationStudents();
+        if(p==='客户 / 家庭档案'&&window.renderEducationStudents)window.renderEducationStudents(); if(p==='家庭日程')renderFamilyScheduleFromLessons();
         const target=document.getElementById(map[p]||'placeholder');
         if(target)target.style.display='block';
         if(p==='学业管理'){const m=document.getElementById('moeSubjectExplorer');if(m)m.style.display='block';}
