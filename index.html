@@ -98,27 +98,18 @@
     <section class="section"><div class="section-head"><h2>冲突中心</h2><span class="label">系统自动发现时间重叠</span></div><div class="card"><div class="item"><span class="tag danger">高优先级</span><b>司机冲突</b> · 星期四 17:00 李先生同时承担 Jason 接送与另一项家庭接送任务。建议重新分配司机或调整时间。</div><div class="item"><span class="tag warn">待确认</span><b>临时安排</b> · Amy 星期五活动接送尚未确认司机与车辆。</div></div></section>
   </div>
   <div id="familySchedule" style="display:none">
-    <section class="section" style="margin-top:0"><div class="section-head"><h2>家庭日程</h2><button class="link">＋ 新增日程</button></div><div class="cards">
-      <div class="card"><span class="label">📅 今日安排</span><div class="metric">7</div><span class="label">家庭成员共同日程</span></div>
-      <div class="card"><span class="label">🚗 接送安排</span><div class="metric">3</div><span class="label">其中 1 项待确认</span></div>
-      <div class="card"><span class="label">🎓 教育活动</span><div class="metric">4</div><span class="label">课程 / 活动</span></div>
-      <div class="card"><span class="label">⚠️ 时间冲突</span><div class="metric">1</div><span class="label">需要重新安排</span></div>
-    </section>
-    <section class="section"><div class="grid"><div><div class="section-head"><h2>今天</h2><span class="pill" id="familyScheduleDate">—</span></div><div class="timeline">
-      <div class="event"><div class="time">09:00</div><div><strong><span class="dot"></span>学校</strong><small>Jason · Primary 5 · 当前小学</small></div><span class="pill">学校</span></div>
-      <div id="familyScheduleLessonEvents"><div class="event"><div class="time">—</div><div><strong><span class="dot"></span>课程记录</strong><small>暂无实际课程记录</small></div><span class="pill">课程</span></div></div>
-      <div class="event"><div class="time">17:00</div><div><strong><span class="dot"></span>接送回家</strong><small>Jason · 李先生 · SGX 1234 A</small></div><span class="pill">接送</span></div>
-      <div class="event"><div class="time">18:30</div><div><strong><span class="dot"></span>家庭晚餐</strong><small>家庭活动</small></div><span class="pill">家庭</span></div>
-      <div class="event"><div class="time">20:00</div><div><strong><span class="dot"></span>智能学习</strong><small>Jason · 英语词汇 · 3 分钟练习</small></div><span class="pill">学习</span></div>
-    </div></div><div><div class="section-head"><h2>日程关注</h2><span class="label">按优先级处理</span></div><div class="attention">
-      <div class="item"><span class="tag danger">冲突</span>星期四 Jason 接送与课程时间重叠</div>
-      <div class="item"><span class="tag warn">待确认</span>Amy 周五活动接送尚未确认</div>
-      <div class="item"><span class="tag warn">提醒</span>下周一科学考试</div>
-      <div class="item"><span class="tag danger">待处理</span>老师反馈尚未查看</div>
-    </div></div></div></section>
-    <section class="section"><div class="section-head"><h2>学生时间线</h2><span class="label">家庭 → 学生 → 学年 → 日程</span></div><div class="card"><div class="finance-row"><span>Jason</span><b>学校 → 英语 → 接送 → 智能学习</b></div><div class="finance-row"><span>Amy</span><b>学校 → 数学 → 家庭活动</b></div><div class="finance-row"><span>家庭</span><b>晚餐 → 家庭事务 → 周末活动</b></div></div></section>
-  </div>
-  <div id="dashboard">
+  <section class="cards">
+    <div class="card"><span class="label">📅 今日课程</span><div class="metric" id="fsLessons">0</div><span class="label">来自课程记录</span></div>
+    <div class="card"><span class="label">🚗 今日接送</span><div class="metric" id="fsTransport">0</div><span class="label">来自接送管理</span></div>
+    <div class="card"><span class="label">⚠️ 时间冲突</span><div class="metric" id="fsConflicts">0</div><span class="label">未处理冲突</span></div>
+  </section>
+  <section class="section"><div class="grid">
+    <div><div class="section-head"><h2>今天</h2><span class="pill" id="familyScheduleDate">—</span></div><div class="timeline" id="familyScheduleEvents"></div></div>
+    <div><div class="section-head"><h2>日程关注</h2><span class="label">自动汇总</span></div><div class="attention" id="familyScheduleAttention"></div></div>
+  </div></section>
+  <section class="section"><div class="section-head"><h2>学生时间线</h2><span class="label">家庭 → 学生 → 学年 → 日程</span></div><div class="card" id="familyScheduleStudents"></div></section>
+</div>
+<div id="dashboard">
   <section class="cards" id="dashboardMetrics">
     <div class="card"><span class="label">📅 今日课程</span><div class="metric" id="dashLessons">0</div><span class="label" id="dashLessonsSub">暂无课程</span></div>
     <div class="card"><span class="label">🚗 今日接送</span><div class="metric" id="dashTransport">0</div><span class="label" id="dashTransportSub">暂无接送</span></div>
@@ -1054,6 +1045,22 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
       '<div class="card"><div class="section-head"><h2>最近教师反馈</h2></div>'+(feedback.length?feedback.slice().reverse().slice(0,10).map(x=>'<div class="event"><div><strong>'+esc(name(x.studentId))+' · '+esc(x.subjectId||'科目')+'</strong><small>'+esc(x.date||'')+' · '+esc(x.note||'')+'</small></div></div>').join(''):'<span class="label">暂无教师反馈。</span>')+'</div></div>';
     p.appendChild(sec);
   }
+  function renderFamilySchedule(){
+    const p=document.getElementById('familySchedule');if(!p)return;
+    const r=ensureStore(),ss=allStudents(),ls=r.lessons||[],ts=r.transportTasks||[],cf=(r.conflicts||[]).filter(x=>x.status!=='已处理');
+    const now=new Date(),pad=n=>String(n).padStart(2,'0'),today=now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
+    const todayLs=ls.filter(x=>String(x.date||'')===today&&x.status!=='已取消'),todayTs=ts.filter(x=>String(x.date||'')===today&&x.status!=='已取消');
+    const name=id=>ss.find(s=>String(s.id)===String(id))?.name||'学生';
+    const teacher=id=>(r.teachers||[]).find(x=>String(x.id)===String(id))?.name||'老师未设置';
+    const driver=id=>(r.drivers||[]).find(x=>String(x.id)===String(id))?.name||'司机未设置';
+    const vehicle=id=>(r.vehicles||[]).find(x=>String(x.id)===String(id))?.number||'车辆未设置';
+    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+    set('fsLessons',todayLs.length);set('fsTransport',todayTs.length);set('fsConflicts',cf.length);set('familyScheduleDate',today);
+    const events=[...todayLs.map(x=>({time:x.time||'—',title:name(x.studentId)+' · '+(x.subjectId||'课程'),note:teacher(x.teacherId)+' · '+(x.duration||'')+' 小时',status:x.status||'已安排'})),...todayTs.map(x=>({time:x.time||'—',title:name(x.studentId)+' · 接送',note:driver(x.driverId)+' · '+vehicle(x.vehicleId)+' · '+(x.from||'')+' → '+(x.to||''),status:x.status||'待确认'}))].sort((a,b)=>String(a.time).localeCompare(String(b.time)));
+    const box=document.getElementById('familyScheduleEvents');if(box)box.innerHTML=events.length?events.map(x=>'<div class="event"><div class="time">'+esc(x.time)+'</div><div><strong><span class="dot"></span>'+esc(x.title)+'</strong><small>'+esc(x.note)+'</small></div><span class="pill">'+esc(x.status)+'</span></div>').join(''):'<div class="item"><span class="label">今天暂无课程或接送安排。</span></div>';
+    const att=document.getElementById('familyScheduleAttention');if(att)att.innerHTML=cf.length?cf.slice(0,8).map(x=>'<div class="item"><span class="tag danger">冲突</span> '+esc(x.title||'存在时间冲突')+'<br><span class="label">'+esc(x.note||'')+'</span></div>').join(''):'<div class="item"><span class="label">目前没有未处理的时间冲突。</span></div>';
+    const sb=document.getElementById('familyScheduleStudents');if(sb)sb.innerHTML=ss.length?ss.map(s=>{const ev=[...todayLs.filter(x=>String(x.studentId)===String(s.id)).map(x=>(x.time||'—')+' '+(x.subjectId||'课程')),...todayTs.filter(x=>String(x.studentId)===String(s.id)).map(x=>(x.time||'—')+' 接送')];return '<div class="finance-row"><span>'+esc(s.name)+'</span><b>'+esc(ev.length?ev.join(' · '):'今天暂无安排')+'</b></div>'}).join(''):'<span class="label">暂无学生资料。</span>';
+  }
   function renderDashboard(){
     const p=document.getElementById('dashboard');if(!p)return;
     const r=ensureStore(),ss=allStudents(),ls=r.lessons||[],tasks=r.transportTasks||[],conflicts=r.conflicts||[],payments=Array.isArray(r.payments)?r.payments:[],packages=r.packages||[],goals=r.academicGoals||[],progress=r.progressRecords||[],feedbacks=r.feedbacks||[];
@@ -1109,11 +1116,11 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
     if(finance)finance.innerHTML='<div class="finance-row"><span>补习费用</span><b>$'+tuition.toFixed(2)+'</b></div><div class="finance-row"><span>活动费用</span><b>$'+activity.toFixed(2)+'</b></div><div class="finance-row"><span>接送费用</span><b>$'+transportFee.toFixed(2)+'</b></div><div class="finance-row"><span>本月合计</span><b>$'+monthTotal.toFixed(2)+'</b></div>';
   }
   function observe(){
-    const ids=['dashboard','educationPage','familyAffairsPage','tasksPage','pendingPage','familyReportPage'];
-    const obs=new MutationObserver(()=>{ids.forEach(id=>{const e=document.getElementById(id);if(e&&getComputedStyle(e).display!=='none'){if(id==='dashboard')renderDashboard();if(id==='educationPage')renderEducation();if(id==='academicPage')renderAcademic();if(id==='transportPage')renderTransport();if(['familyAffairsPage','tasksPage','pendingPage','familyReportPage'].includes(id))renderManagementPages()}})});
+    const ids=['dashboard','familySchedule','educationPage','academicPage','transportPage','familyAffairsPage','tasksPage','pendingPage','familyReportPage'];
+    const obs=new MutationObserver(()=>{ids.forEach(id=>{const e=document.getElementById(id);if(e&&getComputedStyle(e).display!=='none'){if(id==='dashboard')renderDashboard();if(id==='familySchedule')renderFamilySchedule();if(id==='educationPage')renderEducation();if(id==='academicPage')renderAcademic();if(id==='transportPage')renderTransport();if(['familyAffairsPage','tasksPage','pendingPage','familyReportPage'].includes(id))renderManagementPages()}})});
     ids.forEach(id=>{const e=document.getElementById(id);if(e)obs.observe(e,{attributes:true,attributeFilter:['style']})});
   }
-  function init(){ensureStore();renderManagementPages();renderDashboard();renderEducation();renderAcademic();renderTransport();observe()}
+  function init(){ensureStore();renderManagementPages();renderDashboard();renderFamilySchedule();renderEducation();renderAcademic();renderTransport();observe()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>\n</body></html>
