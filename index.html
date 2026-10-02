@@ -210,22 +210,8 @@ function feeAcademicYear(studentId,date){
 }
 function seedFeeData(){
   const r=ensureStore();
-  if(Array.isArray(r.payments)&&r.payments.length)return r;
-  const ss=typeof allStudents==='function'?allStudents():[];
-  const sid=name=>ss.find(x=>x.name===name)?.id||('legacy_'+name.toLowerCase());
-  const month='2026-10';
-  r.payments=[
-    {id:'payment___english',studentId:sid(''),category:'补习',description:'English',amount:340,date:month+'-01',status:'已支付',teacherName:'陈老师',subjectId:'English'},
-    {id:'payment___math',studentId:sid(''),category:'补习',description:'Mathematics',amount:320,date:month+'-01',status:'已支付',teacherName:'林老师',subjectId:'Mathematics'},
-    {id:'payment___science',studentId:sid(''),category:'补习',description:'Science',amount:220,date:month+'-01',status:'待支付',teacherName:'周老师',subjectId:'Science'},
-    {id:'payment___math',studentId:sid(''),category:'补习',description:'Mathematics',amount:260,date:month+'-01',status:'已支付',teacherName:'王老师',subjectId:'Mathematics'},
-    {id:'payment___english',studentId:sid(''),category:'补习',description:'English 阅读',amount:140,date:month+'-01',status:'已支付',teacherName:'陈老师',subjectId:'English'},
-    {id:'payment___track',studentId:sid(''),category:'活动',description:'田径专项训练（DSA Sports）',amount:120,date:month+'-01',status:'已支付',subjectId:''},
-    {id:'payment___art',studentId:sid(''),category:'活动',description:'美术班',amount:70,date:month+'-01',status:'待支付',subjectId:''},
-    {id:'payment___race',studentId:sid(''),category:'活动',description:'校际田径赛报名',amount:50,date:month+'-01',status:'已支付',subjectId:''},
-    {id:'payment__transport',studentId:'',category:'接送',description:'司机 / 车辆费用',amount:180,date:month+'-01',status:'已支付',subjectId:''}
-  ];
-  saveEducationRelations(r); return r;
+  if(!Array.isArray(r.payments))r.payments=[];
+  return r;
 }
 function feeTeacherFor(p,r){
   if(p.teacherId){
@@ -738,7 +724,7 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
   function q(id){return document.getElementById(id)}
   function showFamily(){
     const b=q('familyEditBackdrop'); if(!b)return;
-    let data={name:'家庭',contact:'',phone:'',email:'',address:'',status:'正常',date:'2026-10-01',note:''};
+    let data={name:'',contact:'',phone:'',email:'',address:'',status:'',date:'',note:''};
     try{data=Object.assign(data,JSON.parse(localStorage.getItem('educationOS.familyProfile')||'{}'))}catch(e){}
     [['familyNameInput','name'],['familyContactInput','contact'],['familyPhoneInput','phone'],['familyEmailInput','email'],['familyAddressInput','address'],['familyStatusInput','status'],['familyDateInput','date'],['familyNoteInput','note']].forEach(function(x){const el=q(x[0]);if(el)el.value=data[x[1]]||''});
     b.classList.add('show');b.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';
