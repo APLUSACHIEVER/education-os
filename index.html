@@ -119,38 +119,22 @@
     <section class="section"><div class="section-head"><h2>学生时间线</h2><span class="label">家庭 → 学生 → 学年 → 日程</span></div><div class="card"><div class="finance-row"><span>Jason</span><b>学校 → 英语 → 接送 → 智能学习</b></div><div class="finance-row"><span>Amy</span><b>学校 → 数学 → 家庭活动</b></div><div class="finance-row"><span>家庭</span><b>晚餐 → 家庭事务 → 周末活动</b></div></div></section>
   </div>
   <div id="dashboard">
-    <section class="cards">
-      <div class="card"><span class="label">📅 今日课程</span><div class="metric">4</div><span class="label">全部已安排</span></div>
-      <div class="card"><span class="label">🚗 今日接送</span><div class="metric">3</div><span class="label">1 项需要确认</span></div>
-      <div class="card"><span class="label">🔔 待处理</span><div class="metric">2</div><span class="label">需要家长处理</span></div>
-      <div class="card"><span class="label">📚 学习任务</span><div class="metric">5</div><span class="label">今日完成 3 项</span></div>
-    </section>
-    <section class="section"><div class="grid">
-      <div><div class="section-head"><h2>学生今日安排</h2><button class="link">查看完整日程 →</button></div><div class="timeline">
-        <div class="event"><div class="time">09:00</div><div><strong><span class="dot"></span>学校</strong><small>Jason · 小学五年级</small></div><span class="pill">进行中</span></div>
-        <div class="event"><div class="time">15:30</div><div><strong><span class="dot"></span>英语补习</strong><small>Jason · 英语 · 陈老师</small></div><span class="pill">课程</span></div>
-        <div class="event"><div class="time">17:00</div><div><strong><span class="dot"></span>接送回家</strong><small>司机：李先生 · 车辆：SGX 1234 A</small></div><span class="pill">接送</span></div>
-        <div class="event"><div class="time">20:00</div><div><strong><span class="dot"></span>智能学习</strong><small>英语词汇 · 3 分钟练习</small></div><span class="pill">学习</span></div>
-      </div></div>
-      <div><div class="section-head"><h2>需要您关注</h2><button class="link">查看全部 →</button></div><div class="attention">
-        <div class="item"><span class="tag danger">待处理</span>英语老师反馈待查看</div>
-        <div class="item"><span class="tag warn">即将到期</span>数学作业明天到期</div>
-        <div class="item"><span class="tag danger">冲突</span>星期四接送时间存在冲突</div>
-        <div class="item"><span class="tag warn">提醒</span>下周一科学考试</div>
-      </div></div>
-    </div></section>
-    <section class="section"><div class="grid">
-      <div><div class="section-head"><h2>学习情况</h2><button class="link">进入学业管理 →</button></div><div class="learning">
-        <div class="progress-row"><div class="progress-label"><span>英语</span><b>82%</b></div><div class="bar"><div class="fill" style="width:82%"></div></div></div>
-        <div class="progress-row"><div class="progress-label"><span>数学</span><b>64%</b></div><div class="bar"><div class="fill" style="width:64%"></div></div></div>
-        <div class="progress-row"><div class="progress-label"><span>科学</span><b>73%</b></div><div class="bar"><div class="fill" style="width:73%"></div></div></div>
-      </div></div>
-      <div><div class="section-head"><h2>本月家庭教育费用</h2><button class="link">查看费用报告 →</button></div><div class="finance">
-        <div class="finance-row"><span>补习费用</span><b>$1,280</b></div><div class="finance-row"><span>活动费用</span><b>$240</b></div><div class="finance-row"><span>接送费用</span><b>$180</b></div><div class="finance-row"><span>本月合计</span><b>$1,700</b></div>
-      </div></div>
-    </div></section>
-  </div>
-  <div id="childProfile" style="display:none">
+  <section class="cards" id="dashboardMetrics">
+    <div class="card"><span class="label">📅 今日课程</span><div class="metric" id="dashLessons">0</div><span class="label" id="dashLessonsSub">暂无课程</span></div>
+    <div class="card"><span class="label">🚗 今日接送</span><div class="metric" id="dashTransport">0</div><span class="label" id="dashTransportSub">暂无接送</span></div>
+    <div class="card"><span class="label">🔔 待处理</span><div class="metric" id="dashPending">0</div><span class="label" id="dashPendingSub">当前无需处理</span></div>
+    <div class="card"><span class="label">🎟️ 课时包</span><div class="metric" id="dashPackages">0</div><span class="label" id="dashPackagesSub">全部正常</span></div>
+  </section>
+  <section class="section"><div class="grid">
+    <div><div class="section-head"><h2>今天的家庭安排</h2><span class="label" id="dashDateLabel"></span></div><div class="timeline" id="dashTimeline"></div></div>
+    <div><div class="section-head"><h2>需要您关注</h2><span class="label">实时汇总</span></div><div class="attention" id="dashAttention"></div></div>
+  </div></section>
+  <section class="section"><div class="grid">
+    <div><div class="section-head"><h2>学生学习概况</h2><span class="label">来自学业记录</span></div><div id="dashStudents"></div></div>
+    <div><div class="section-head"><h2>本月家庭教育费用</h2><span class="label" id="dashMonthLabel"></span></div><div class="finance" id="dashFinance"></div></div>
+  </div></section>
+</div>
+<div id="childProfile" style="display:none">
     <section class="section" style="margin-top:0"><div class="section-head"><h2>学生完整档案</h2><span class="pill">家庭 → 学生 → 学年</span></div><div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div><h3 style="margin:0">Jason</h3><div class="label">当前学年 · 2026 Primary 5 · 11 岁</div></div><span class="pill">长期档案</span></div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px"><div><span class="label">当前学校</span><b style="display:block;margin-top:5px">当前小学</b></div><div><span class="label">学习阶段</span><b style="display:block;margin-top:5px">Primary</b></div><div><span class="label">主要科目</span><b style="display:block;margin-top:5px">English · Mathematics · Science</b></div><div><span class="label">当前目标</span><b style="display:block;margin-top:5px">提升英语词汇</b></div></div></div></section>
     <section class="section"><div class="section-head"><h2>学年时间线</h2><span class="label">历史记录不会被新学年覆盖</span></div><div class="timeline"><div class="event"><div class="time">2026</div><div><strong>Primary 5 · 当前学年</strong><small>当前小学 · English / Mathematics / Science · 提升英语词汇</small></div><span class="pill">当前</span></div><div class="event"><div class="time">2027</div><div><strong>Primary 6 · 下一学年</strong><small>PSLE · DSA-Sec 规划 · 申请年份 2027</small></div><span class="pill">下一学年</span></div><div class="event"><div class="time">2028</div><div><strong>Secondary 1 · 升学规划</strong><small>学校待定 · IP / Mainstream / SAP / Specialised 待确认</small></div><span class="pill">待入学</span></div></div></section>
     <section class="section"><div class="grid"><div><div class="section-head"><h2>学习与教育</h2></div><div class="card"><div class="finance-row"><span>学业目标</span><b>提升英语词汇</b></div><div class="finance-row"><span>学习进度</span><b>英语 82% · 数学 64% · 科学 73%</b></div><div class="finance-row"><span>课程 / 补习</span><b>英语 · 数学 · 科学</b></div><div class="finance-row"><span>老师反馈</span><b>持续记录</b></div></div></div><div><div class="section-head"><h2>升学与 DSA</h2></div><div class="card"><div class="finance-row"><span>申请年份</span><b>2027 DSA-Sec</b></div><div class="finance-row"><span>Talent Area</span><b>Sports</b></div><div class="finance-row"><span>目标学校</span><b>可建立多所候选学校</b></div><div class="finance-row"><span>最终学校</span><b>待确认</b></div></div></div></div></section>
@@ -1071,9 +1055,58 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
     p.appendChild(sec);
   }
   function renderDashboard(){
-    const p=document.getElementById('dashboard');if(!p)return;const r=rel(),ls=r.lessons||[],today=new Date().toISOString().slice(0,10),todayLs=ls.filter(x=>x.date===today&&x.status!=='已取消');
-    const ms=p.querySelectorAll('.metric');if(ms[0])ms[0].textContent=todayLs.length;if(ms[1])ms[1].textContent=(r.transportTasks||[]).filter(x=>x.date===today).length;if(ms[2])ms[2].textContent=(r.tasks||[]).filter(x=>x.status!=='已完成').length;if(ms[3])ms[3].textContent=ls.filter(x=>x.status==='已安排').length;
-    const timeline=p.querySelector('.timeline');if(timeline){const ss=allStudents(),tm=Object.fromEntries((r.teachers||[]).map(x=>[x.id,x.name]));timeline.innerHTML=todayLs.length?todayLs.map(l=>{const s=ss.find(x=>String(x.id)===String(l.studentId));return '<div class="event"><div class="time">'+esc(l.time||'—')+'</div><div><strong><span class="dot"></span>'+esc(s?.name||'学生')+' · '+esc(l.subjectId||'课程')+'</strong><small>'+esc(tm[l.teacherId]||'老师未设置')+' · '+esc(l.duration||'')+' 小时</small></div><span class="pill">'+esc(l.status||'已安排')+'</span></div>'}).join(''):'<div class="item"><span class="label">今天暂无课程记录。</span></div>'}
+    const p=document.getElementById('dashboard');if(!p)return;
+    const r=ensureStore(),ss=allStudents(),ls=r.lessons||[],tasks=r.transportTasks||[],conflicts=r.conflicts||[],payments=Array.isArray(r.payments)?r.payments:[],packages=r.packages||[],goals=r.academicGoals||[],progress=r.progressRecords||[],feedbacks=r.feedbacks||[];
+    const now=new Date(), pad=n=>String(n).padStart(2,'0'), today=now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate()), month=today.slice(0,7);
+    const todayLs=ls.filter(x=>String(x.date||'')===today&&x.status!=='已取消').sort((a,b)=>String(a.time||'').localeCompare(String(b.time||'')));
+    const todayTs=tasks.filter(x=>String(x.date||'')===today&&x.status!=='已取消').sort((a,b)=>String(a.time||'').localeCompare(String(b.time||'')));
+    const unresolved=conflicts.filter(x=>x.status!=='已处理'), pendingTasks=(r.tasks||[]).filter(x=>x.status!=='已完成'), pendingTransport=tasks.filter(x=>x.status!=='已完成'&&x.status!=='已取消');
+    const monthPayments=payments.filter(x=>String(x.date||'').slice(0,7)===month&&x.status!=='已取消');
+    const sum=arr=>arr.reduce((n,x)=>n+Number(x.amount||0),0);
+    const monthTotal=sum(monthPayments), tuition=sum(monthPayments.filter(x=>x.category==='补习')), activity=sum(monthPayments.filter(x=>x.category==='活动')), transportFee=sum(monthPayments.filter(x=>x.category==='接送'));
+    const lowPackages=packages.filter(x=>Math.max(0,Number(x.totalHours||0)-Number(x.usedHours||0))<=2);
+    const teacherMap=Object.fromEntries((r.teachers||[]).map(x=>[String(x.id),x.name]));
+    const driverMap=Object.fromEntries((r.drivers||[]).map(x=>[String(x.id),x.name]));
+    const vehicleMap=Object.fromEntries((r.vehicles||[]).map(x=>[String(x.id),x.number]));
+    const studentName=id=>ss.find(s=>String(s.id)===String(id))?.name||'学生';
+    const fmtDate=(y,m,d)=>y+'年'+m+'月'+d+'日';
+    const dateLabel=fmtDate(now.getFullYear(),now.getMonth()+1,now.getDate());
+    const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+    set('dashLessons',todayLs.length);set('dashTransport',todayTs.length);set('dashPending',unresolved.length+pendingTasks.length+pendingTransport.length);set('dashPackages',packages.length);
+    set('dashDateLabel',dateLabel);set('dashMonthLabel',now.getFullYear()+'年'+(now.getMonth()+1)+'月');
+    set('dashLessonsSub',todayLs.length?(todayLs.filter(x=>x.status==='已完成').length+' 项已完成 · '+todayLs.filter(x=>x.status!=='已完成').length+' 项待完成'):'今天暂无课程');
+    set('dashTransportSub',todayTs.length?(todayTs.filter(x=>x.status==='已完成').length+' 项已完成 · '+todayTs.filter(x=>x.status!=='已完成').length+' 项待确认'):'今天暂无接送');
+    set('dashPendingSub',(unresolved.length+pendingTasks.length+pendingTransport.length)?('冲突 '+unresolved.length+' · 任务 '+pendingTasks.length+' · 接送 '+pendingTransport.length):'当前无需处理');
+    set('dashPackagesSub',lowPackages.length?lowPackages.length+' 个课时包余额偏低':'全部课时包余额正常');
+    const timeline=document.getElementById('dashTimeline');
+    if(timeline){
+      const events=[
+        ...todayLs.map(x=>({time:x.time||'—',title:studentName(x.studentId)+' · '+(x.subjectId||'课程'),note:(teacherMap[String(x.teacherId)]||'老师未设置')+' · '+(x.duration||'')+' 小时',status:x.status||'已安排',type:'课程'})),
+        ...todayTs.map(x=>({time:x.time||'—',title:studentName(x.studentId)+' · 接送',note:(driverMap[String(x.driverId)]||'司机未设置')+' · '+(vehicleMap[String(x.vehicleId)]||'车辆未设置')+' · '+(x.from||'')+' → '+(x.to||''),status:x.status||'待确认',type:'接送'}))
+      ].sort((a,b)=>String(a.time).localeCompare(String(b.time)));
+      timeline.innerHTML=events.length?events.map(x=>'<div class="event"><div class="time">'+esc(x.time)+'</div><div><strong><span class="dot"></span>'+esc(x.title)+'</strong><small>'+esc(x.note)+'</small></div><span class="pill">'+esc(x.status)+'</span></div>').join(''):'<div class="item"><span class="label">今天暂无课程或接送安排。</span></div>';
+    }
+    const attention=document.getElementById('dashAttention');
+    if(attention){
+      const items=[
+        ...unresolved.slice(0,4).map(x=>({tag:'冲突',cls:'danger',title:x.title||'时间安排存在冲突',note:x.note||''})),
+        ...pendingTransport.slice(0,4).map(x=>({tag:'接送',cls:'warn',title:studentName(x.studentId)+' · 接送待确认',note:(x.date||'')+' '+(x.time||'')})),
+        ...pendingTasks.slice(0,4).map(x=>({tag:'任务',cls:'warn',title:x.title,note:x.due?'截止 '+x.due:''})),
+        ...lowPackages.slice(0,3).map(x=>({tag:'课时包',cls:'warn',title:x.name||'课时包余额偏低',note:'剩余 '+Math.max(0,Number(x.totalHours||0)-Number(x.usedHours||0))+' 小时'}))
+      ];
+      attention.innerHTML=items.length?items.slice(0,7).map(x=>'<div class="item"><span class="tag '+x.cls+'">'+esc(x.tag)+'</span> '+esc(x.title)+(x.note?'<br><span class="label">'+esc(x.note)+'</span>':'')+'</div>').join(''):'<div class="item"><span class="label">目前没有需要特别关注的事项。</span></div>';
+    }
+    const studentsBox=document.getElementById('dashStudents');
+    if(studentsBox){
+      studentsBox.innerHTML=ss.length?ss.map(s=>{
+        const sid=String(s.id), sg=goals.filter(x=>String(x.studentId)===sid&&x.status!=='已完成'), sp=progress.filter(x=>String(x.studentId)===sid), sf=feedbacks.filter(x=>String(x.studentId)===sid), sl=ls.filter(x=>String(x.studentId)===sid);
+        const recentProgress=sp.length?sp[sp.length-1]:null;
+        const year=s.academicYears?.find(y=>String(y.year)===String(s.schoolYear))||s.academicYears?.[s.academicYears.length-1];
+        return '<div class="card" style="margin-bottom:10px"><div class="section-head"><div><h3 style="margin:0">'+esc(s.name)+'</h3><span class="label">'+esc(year?.year||s.schoolYear||'')+' · '+esc(year?.grade||s.grade||'')+' · '+esc(year?.school||s.school||'学校未设置')+'</span></div><span class="pill">'+sl.filter(x=>x.status==='已完成').length+'/'+sl.length+' 课程完成</span></div><div class="finance-row"><span>当前目标</span><b>'+esc(sg[0]?.goal||'暂无未完成目标')+'</b></div><div class="finance-row"><span>最近学习进度</span><b>'+esc(recentProgress?.level||'暂无记录')+'</b></div><div class="finance-row"><span>教师反馈</span><b>'+sf.length+' 条</b></div></div>';
+      }).join(''):'<div class="card"><span class="label">暂无学生档案。</span></div>';
+    }
+    const finance=document.getElementById('dashFinance');
+    if(finance)finance.innerHTML='<div class="finance-row"><span>补习费用</span><b>$'+tuition.toFixed(2)+'</b></div><div class="finance-row"><span>活动费用</span><b>$'+activity.toFixed(2)+'</b></div><div class="finance-row"><span>接送费用</span><b>$'+transportFee.toFixed(2)+'</b></div><div class="finance-row"><span>本月合计</span><b>$'+monthTotal.toFixed(2)+'</b></div>';
   }
   function observe(){
     const ids=['dashboard','educationPage','familyAffairsPage','tasksPage','pendingPage','familyReportPage'];
