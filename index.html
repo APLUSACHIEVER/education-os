@@ -604,13 +604,12 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
   function loadEducationRelations(){
     try{
       const raw=JSON.parse(localStorage.getItem(EDUCATION_RELATION_KEY)||'{}');
-      return {
-        teachers:Array.isArray(raw.teachers)?raw.teachers:[],
-        courses:Array.isArray(raw.courses)?raw.courses:[],
-        packages:Array.isArray(raw.packages)?raw.packages:[],
-        lessons:Array.isArray(raw.lessons)?raw.lessons:[]
-      };
-    }catch(e){return {teachers:[],courses:[],packages:[],lessons:[]};}
+      return Object.assign({
+        teachers:[],courses:[],packages:[],lessons:[],
+        drivers:[],vehicles:[],transportTasks:[],temporaryArrangements:[],conflicts:[],
+        tasks:[],affairs:[],assessments:[],academicGoals:[],progressRecords:[],feedbacks:[]
+      },raw);
+    }catch(e){return {teachers:[],courses:[],packages:[],lessons:[],drivers:[],vehicles:[],transportTasks:[],temporaryArrangements:[],conflicts:[],tasks:[],affairs:[],assessments:[],academicGoals:[],progressRecords:[],feedbacks:[]};}
   }
   function saveEducationRelations(data){localStorage.setItem(EDUCATION_RELATION_KEY,JSON.stringify(data));}
   let relations=loadEducationRelations();
@@ -623,13 +622,29 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
     const yr=yearRec||{};
     const stageValue=yr.stage||s.stage||'Primary';
     const stageName=stageValue==='Secondary'?'中学':stageValue==='JC'?'初级学院':'小学';
-    const yearGrade=yr.grade||s.grade||'未设置', yearSchool=yr.school||s.school||'未填写', yearPath=yr.path||s.path||'未设置', yearGoal=yr.goal||s.goal||'尚未设置';
-    box.innerHTML=
+    const yearGrade=yr.grade||s.grade||'未设置', yearSchool=yr.school||s.school||'未填写', yearPath=yr.path||s.path||'未设置', yearGoal=yr.goal||'尚未设置';
+    relations=loadEducationRelations();
+    const subjectKey=String(subject||'').trim();
+    const subjectStore=yr.subjectRecords&&typeof yr.subjectRecords==='object'?yr.subjectRecords:{};
+    const subjectRec=subjectStore[subjectKey]||{};
+    const teacher=relations.teachers.find(x=>String(x.id)===String(subjectRec.teacherId));
+    const course=relations.courses.find(x=>String(x.id)===String(subjectRec.courseId));
+    const pack=relations.packages.find(x=>String(x.id)===String(subjectRec.packageId));
+    const teacherDisplay=teacher?.name||subjectRec.teacher||'未设置';
+    const courseDisplay=course?.name||subjectRec.course||'未设置';
+    const packageDisplay=pack?.name||subjectRec.package||'未设置';
+    const packageTotal=Number(pack?.totalHours||0),packageUsed=Number(pack?.usedHours||0),packageRemaining=Math.max(0,packageTotal-packageUsed);
+    const academicId=yearRec?.id||('academic_'+id+'_'+year);
+    const subjectGoals=(relations.academicGoals||[]).filter(x=>String(x.studentId)===String(id)&&String(x.academicYearId)===String(academicId)&&String(x.subjectId)===subjectKey);
+    const subjectProgress=(relations.progressRecords||[]).filter(x=>String(x.studentId)===String(id)&&String(x.academicYearId)===String(academicId)&&String(x.subjectId)===subjectKey);
+    const subjectAssessments=(relations.assessments||[]).filter(x=>String(x.studentId)===String(id)&&String(x.academicYearId)===String(academicId)&&String(x.subjectId)===subjectKey);
+    const subjectFeedback=(relations.feedbacks||[]).filter(x=>String(x.studentId)===String(id)&&String(x.academicYearId)===String(academicId)&&String(x.subjectId)===subjectKey);
+    const latestGoal=subjectGoals[subjectGoals.length-1],latestProgress=subjectProgress[subjectProgress.length-1],latestAssessment=subjectAssessments[subjectAssessments.length-1],latestFeedback=subjectFeedback[subjectFeedback.length-1];    box.innerHTML=
       '<div class="card" style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><h2 style="margin:0">'+escSubject(s.name)+' · '+escSubject(year)+' · '+escSubject(subject)+'</h2><div class="label" style="margin-top:5px">科目档案 · '+escSubject(yearGrade)+' · '+stageName+'</div></div><button class="link" id="backSubjectYear">← 返回学年档案</button></div></div>'+
       '<section class="section" style="margin-top:0"><div class="section-head"><h2>一、科目基本资料</h2><span class="pill">'+escSubject(year)+' · '+escSubject(subject)+'</span></div><div class="card"><div class="two">'+
       [['学生',s.name],['学年',year],['年级',yearGrade],['学校',yearSchool],['学段',stageName],['学习路径',yearPath]].map(x=>'<div class="finance-row"><span>'+escSubject(x[0])+'</span><b>'+escSubject(x[1])+'</b></div>').join('')+'</div></div></section>'+
-      '<section class="section"><div class="section-head"><h2>二、老师与课程</h2><button class="link" id="addLessonBtn">＋ 记录上课</button></div><div class="two"><div><div class="card"><div class="section-head"><h2>老师与课程</h2><button class="link" id="editSubjectTeachingBtn">✎ 编辑</button></div>'+[['老师',teacherDisplay],['课程 / 补习',courseDisplay],['课时包',packageDisplay],['总课时',packageTotal?packageTotal+' 小时':'未设置'],['已使用',packageTotal?packageUsed+' 小时':'未设置'],['剩余',packageTotal?packageRemaining+' 小时':'未设置'],['上课频率',subjectRec.frequency||'未设置']].map(x=>'<div class="finance-row"><span>'+x[0]+'</span><b>'+escSubject(x[1])+'</b></div>').join('')+'</div></div><div><div class="section-head"><h2>三、学习目标</h2></div><div class="card">'+[['年度目标',yearGoal],['科目目标','待建立'],['阶段目标','待建立'],['下一步','待建立']].map(x=>'<div class="finance-row"><span>'+x[0]+'</span><b>'+escSubject(x[1])+'</b></div>').join('')+'</div></div></div></section>'+ 
-      '<section class="section"><div class="section-head"><h2>四、课程记录</h2><span class="label">所有实际课程统一从这里管理</span></div><div class="card" id="subjectLessonRecords"></div></section><section class="section"><div class="two"><div><div class="section-head"><h2>五、学习进度</h2></div><div class="card">'+[['当前水平','待建立'],['本学期进度','待建立'],['掌握情况','待建立'],['需要加强','待建立']].map(x=>'<div class="finance-row"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')+'</div></div><div><div class="section-head"><h2>六、测验 / 考试与成绩</h2></div><div class="card">'+[['最近测验','待建立'],['学校考试','待建立'],['成绩趋势','待建立'],['目标成绩','待建立']].map(x=>'<div class="finance-row"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')+'</div></div></div></section>'+
+      '<section class="section"><div class="section-head"><h2>二、老师与课程</h2><button class="link" id="addLessonBtn">＋ 记录上课</button></div><div class="two"><div><div class="card"><div class="section-head"><h2>老师与课程</h2><button class="link" id="editSubjectTeachingBtn">✎ 编辑</button></div>'+[['老师',teacherDisplay],['课程 / 补习',courseDisplay],['课时包',packageDisplay],['总课时',packageTotal?packageTotal+' 小时':'未设置'],['已使用',packageTotal?packageUsed+' 小时':'未设置'],['剩余',packageTotal?packageRemaining+' 小时':'未设置'],['上课频率',subjectRec.frequency||'未设置']].map(x=>'<div class="finance-row"><span>'+x[0]+'</span><b>'+escSubject(x[1])+'</b></div>').join('')+'</div></div><div><div class="section-head"><h2>三、学习目标</h2></div><div class="card">'+[['年度目标',yearGoal],['科目目标',latestGoal?.goal||'待建立'],['阶段目标',latestProgress?.level||'待建立'],['下一步',latestGoal?.status==='已完成'?'建立下一阶段目标':latestGoal?'继续跟进':'待建立']].map(x=>'<div class="finance-row"><span>'+x[0]+'</span><b>'+escSubject(x[1])+'</b></div>').join('')+'</div></div></div></section>'+ 
+      '<section class="section"><div class="section-head"><h2>四、课程记录</h2><span class="label">所有实际课程统一从这里管理</span></div><div class="card" id="subjectLessonRecords"></div></section><section class="section"><div class="two"><div><div class="section-head"><h2>五、学习进度</h2></div><div class="card">'+[['当前水平',latestProgress?.level||'待建立'],['本学期进度',latestProgress?.note||'待建立'],['掌握情况',latestProgress?.level||'待建立'],['需要加强',latestFeedback?.note||'待建立']].map(x=>'<div class="finance-row"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')+'</div></div><div><div class="section-head"><h2>六、测验 / 考试与成绩</h2></div><div class="card">'+[['最近测验',latestAssessment?(latestAssessment.assessment+' · '+latestAssessment.score):'待建立'],['学校考试',subjectAssessments.length+' 次记录'],['成绩趋势',subjectAssessments.length?'已有历史记录':'待建立'],['目标成绩',latestGoal?.goal||'待建立']].map(x=>'<div class="finance-row"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')+'</div></div></div></section>'+
       '<section class="section"><div class="two"><div><div class="section-head"><h2>七、教师反馈</h2></div><div class="card"><span class="label">尚未建立该科目教师反馈。</span></div></div><div><div class="section-head"><h2>八、学习问题 / 薄弱点</h2></div><div class="card"><span class="label">可记录错题、薄弱知识点、学习习惯与需要跟进的问题。</span></div></div></div></section>'+
       '<section class="section"><div class="section-head"><h2>九、家庭日程连接</h2><span class="label">科目记录进入家庭日程</span></div><div class="card">'+[['课程','自动进入家庭日程'],['测验 / 考试','自动进入家庭日程'],['补习','连接接送管理'],['临时安排','可记录课程变化']].map(x=>'<div class="finance-row"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')+'</div></section>'+
       '<section class="section"><div class="section-head"><h2>十、科目备注</h2></div><div class="card"><span class="label">暂未填写。</span></div></section>';
