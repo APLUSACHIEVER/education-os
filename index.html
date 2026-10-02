@@ -359,8 +359,11 @@ function feePackageRows(r){
   }).map(p=>{
     const total=Number(p.totalHours||0),used=Number(p.usedHours||0),remain=Math.max(0,total-used);
     const pct=total?Math.min(100,Math.round(used/total*100)):0;
+    const rate=total&&Number(p.totalAmount||0)?Number(p.totalAmount||0)/total:0;
+    const consumedValue=rate?rate*used:0;
     const label=feeStudentName(p.studentId)+' · '+(p.subjectId||p.name||'课时包');
-    return [label,remain+' / '+total+' 节',pct];
+    const valueText=Number(p.totalAmount||0)?'已用 '+remain+' 节｜消耗价值 '+feeMoney(consumedValue)+'｜剩余 '+feeMoney(Math.max(0,Number(p.totalAmount||0)-consumedValue)):'已用 '+used+' / '+total+' 节｜剩余 '+remain+' 节';
+    return [label,valueText,pct];
   });
 }
 function feeBars(el,rows){
