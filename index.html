@@ -448,7 +448,7 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
    const names=new Set(list.map(s=>(s.name||'').trim().toLowerCase()));
    const all=[...legacy.filter(s=>!names.has(s.name.toLowerCase())),...list];
    cards.innerHTML=all.map(s=>{
-     const stageName=s.stage==='Secondary'?'中学':s.stage==='JC'?'初级学院':s.stage==='MI'?'励仁高级中学':'小学';
+     const stageName=s.stage==='Secondary'?'中学':s.stage==='JC'?'初级学院':'小学';
      const avatar=esc((s.englishName||s.name||'学').trim().slice(0,1).toUpperCase());
      return '<div class="card student-card" data-student-id="'+esc(s.id||('student_'+s.name))+'" style="cursor:pointer"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">'+avatar+'</div><div><h3 style="margin:0">'+esc(s.name||'未命名学生')+'</h3><span class="label">'+esc(s.grade||'未设置年级')+' · '+stageName+'</span></div></div>'+
      '<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);margin-top:8px"><span class="label">当前学年</span><b>'+esc(s.schoolYear||'未设置')+' · '+esc(s.grade||'未设置')+'</b></div>'+
@@ -497,22 +497,24 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
    const childNav=document.querySelector('.nav button[data-page="学生完整档案"]');if(childNav)childNav.classList.add('active');
    const title=document.getElementById('pageTitle'),sub=document.getElementById('pageSub');if(title)title.textContent='学生完整档案';if(sub)sub.textContent=(s.name||'学生')+' · '+(s.schoolYear||'')+' · '+(s.grade||'');
  }
+ function subjectListForYear(subjectText){const raw=String(subjectText||'').split(/[·,，、]/).map(x=>x.trim()).filter(Boolean);return raw.length?raw:['英语','数学','科学','母语'];}
  function showStudentYearProfile(id,year){
    const s=getStudentById(id);if(!s)return;
    const stageName=s.stage==='Secondary'?'中学':s.stage==='JC'?'初级学院':s.stage==='MI'?'励仁高级中学':'小学';
    const current=String(s.schoolYear||'2026'), y=String(year);
-   let d={year:y,grade:s.grade||'未设置',status:y===current?'当前学年':'历史 / 未来学年',school:s.school||'未填写',path:s.path||'未设置',subjects:s.subjects||'尚未设置',goal:s.goal||'尚未设置',exam:'待建立',dsa:'待规划',progress:'待建立'};
+   const yearRecord=Array.isArray(s.academicYears)?s.academicYears.find(r=>String(r.year)===y):null; let d={year:y,grade:yearRecord?.grade||s.grade||'未设置',status:y===current?'当前学年':'历史 / 未来学年',school:yearRecord?.school||s.school||'未填写',path:yearRecord?.path||s.path||'未设置',subjects:yearRecord?.subjects||s.subjects||'尚未设置',goal:yearRecord?.goal||s.goal||'尚未设置',exam:'待建立',dsa:'待规划',progress:'待建立'};
    if((s.name==='Jason'||s.id==='legacy_jason')&&y==='2027')d={year:y,grade:'Primary 6',status:'下一学年',school:s.school||'当前小学',path:'小学普通课程',subjects:'English · Mother Tongue · Mathematics · Science',goal:'PSLE 全面准备',exam:'PSLE',dsa:'2027 DSA-Sec 申请年份',progress:'待建立'};
    if((s.name==='Jason'||s.id==='legacy_jason')&&y==='2028')d={year:y,grade:'Secondary 1',status:'升学规划',school:'待确认',path:'IP / Mainstream 待规划',subjects:'待选择',goal:'完成中学升学规划',exam:'待建立',dsa:'升学规划',progress:'待建立'};
    const detail=document.getElementById('studentDetailContent');
    detail.innerHTML='<div class="card" style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:center"><div><h2 style="margin:0">'+esc(s.name)+' · '+esc(d.year)+' 学年档案</h2><div class="label" style="margin-top:5px">'+esc(d.grade)+' · '+stageName+' · '+esc(d.status)+'</div></div><button class="link" id="backStudentOverview">← 学生总档案</button></div></div>'+
    '<section class="section" style="margin-top:0"><div class="section-head"><h2>一、学年基本资料</h2><span class="pill">'+esc(d.year)+' · '+esc(d.grade)+'</span></div><div class="card"><div class="two">'+fr([['学年状态',esc(d.status)],['学校',esc(d.school)],['学习路径',esc(d.path)],['年级',esc(d.grade)],['主要科目',esc(d.subjects)],['学业目标',esc(d.goal)])+'</div></div></section>'+
-   '<section class="section"><div class="section-head"><h2>二、科目与学习进度</h2><span class="label">每一科独立记录</span></div><div class="card">'+fr([['English Language',esc(d.progress)],['Mathematics',esc(d.progress)],['Science',esc(d.progress)],['Mother Tongue Language','待建立'],['其他科目','按学校实际课程建立']])+'</div></section>'+
+   '<section class="section"><div class="section-head"><h2>二、学校 × 学年 × 科目</h2><span class="label">本学年实际连接</span></div><div class="card"><div class="two">'+fr([['学校',esc(d.school)],['学年',esc(d.year)],['年级',esc(d.grade)],['学习路径',esc(d.path)]])+'</div><div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)"><div class="label" style="margin-bottom:8px">本学年科目</div><div style="display:flex;gap:8px;flex-wrap:wrap">'+subjectListForYear(d.subjects).map(n=>'<button type="button" class="pill year-subject-btn" data-subject="'+esc(n)+'">'+esc(n)+' →</button>').join('')+'</div><div class="label" style="margin-top:10px">科目从该学年档案进入独立科目档案；以后可再连接学校实际开设科目。</div></div></div></section>'+
    '<section class="section"><div class="two"><div><div class="section-head"><h2>三、成绩记录</h2></div><div class="card">'+fr([['平时测验','待建立'],['学校考试',esc(d.exam)],['阶段成绩','待建立'],['老师评价','待建立']])+'</div></div><div><div class="section-head"><h2>四、课程与老师</h2></div><div class="card">'+fr([['课程 / 补习','待连接教育管理'],['老师','待连接老师档案'],['课时包','待连接课时包'],['教师反馈','待建立']])+'</div></div></div></section>'+
    '<section class="section"><div class="two"><div><div class="section-head"><h2>五、考试与目标</h2></div><div class="card">'+fr([['考试',esc(d.exam)],['当前目标',esc(d.goal)],['学习进度',esc(d.progress)],['下一阶段','待建立']])+'</div></div><div><div class="section-head"><h2>六、学校 / DSA规划</h2></div><div class="card">'+fr([['DSA状态',esc(d.dsa)],['候选学校','可建立多所候选学校'],['学校选择','待确认'],['申请记录','待建立']])+'</div></div></div></section>'+
    '<section class="section"><div class="section-head"><h2>七、家庭日程与接送</h2><span class="label">按学年连接</span></div><div class="card">'+fr([['家庭日程','课程、考试、活动将进入家庭日程'],['接送管理','该学生接送任务进入接送安排'],['临时安排','可记录临时接送变化'],['冲突管理','自动检查时间冲突']])+'</div></section>'+
    '<section class="section"><div class="section-head"><h2>八、学年备注</h2></div><div class="card"><span class="label">当前学年暂未建立额外备注。</span></div></section>';
    detail.querySelectorAll('.year-profile-btn').forEach(b=>b.onclick=()=>showStudentYearProfile(id,b.dataset.year));
+   detail.querySelectorAll('.year-subject-btn').forEach(b=>b.onclick=()=>{if(window.showSubjectProfileFromYear)window.showSubjectProfileFromYear(id,y,b.dataset.subject);});
    document.getElementById('backStudentOverview').onclick=()=>showStudentProfile(id);
  }
  cards.addEventListener('click',e=>{const card=e.target.closest('.student-card');if(card)showStudentProfile(card.dataset.studentId)});
@@ -540,7 +542,6 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
     }
     if(stage==='Secondary')return ['英语','母语','数学','科学','人文科目'];
     if(stage==='JC')return ['综合试卷','项目作业'];
-    if(stage==='MI')return ['英语','母语','数学'];
     return ['英语'];
   }
   function currentStudent(id){
@@ -559,6 +560,7 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
     if(detail&&detail.parentNode)detail.parentNode.insertBefore(p,detail.nextSibling);else document.querySelector('.content')?.appendChild(p);
     return p;
   }
+  window.showSubjectProfileFromYear=showSubject;
   function showSubject(id,year,subject){
     const s=currentStudent(id);if(!s)return;
     const p=ensurePage(),box=document.getElementById('studentSubjectProfileContent');
@@ -627,7 +629,7 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
   function showStudent(){const m=q('studentModal');if(!m)return;refreshStudentForm();m.style.display='block';document.body.style.overflow='hidden'}
   function hideStudent(){const m=q('studentModal');if(m)m.style.display='none';document.body.style.overflow=''}
   function saveFamily(e){e.preventDefault();e.stopImmediatePropagation();const v={name:q('familyNameInput')?.value.trim()||'',contact:q('familyContactInput')?.value.trim()||'',phone:q('familyPhoneInput')?.value.trim()||'',email:q('familyEmailInput')?.value.trim()||'',address:q('familyAddressInput')?.value.trim()||'',status:q('familyStatusInput')?.value||'正常',date:q('familyDateInput')?.value||'',note:q('familyNoteInput')?.value.trim()||''};localStorage.setItem('educationOS.familyProfile',JSON.stringify(v));if(q('familyNameDisplay'))q('familyNameDisplay').textContent=v.name||'未填写家庭名称';if(q('familyContactDisplay'))q('familyContactDisplay').textContent=v.contact||'未填写';if(q('familyStatusDisplay'))q('familyStatusDisplay').textContent=v.status;if(q('familyDateDisplay')){const d=v.date?new Date(v.date+'T00:00:00'):null;q('familyDateDisplay').textContent=d&&!isNaN(d)?d.getFullYear()+' 年 '+(d.getMonth()+1)+' 月 '+d.getDate()+' 日':'未填写'}hideFamily()}
-  function saveStudent(e){e.preventDefault();e.stopImmediatePropagation();const form=q('studentForm');if(!form)return;const d=Object.fromEntries(new FormData(form).entries());d.id='student_'+Date.now();d.createdAt=new Date().toISOString();let list=[];try{list=JSON.parse(localStorage.getItem('educationOS_students')||'[]')}catch(x){}list.push(d);localStorage.setItem('educationOS_students',JSON.stringify(list));hideStudent();form.reset();refreshStudentForm();if(window.renderEducationStudents)window.renderEducationStudents();alert('学生档案已建立，并已显示在学生档案中。')}
+  function saveStudent(e){e.preventDefault();e.stopImmediatePropagation();const form=q('studentForm');if(!form)return;const d=Object.fromEntries(new FormData(form).entries());d.id='student_'+Date.now();d.createdAt=new Date().toISOString();let list=[];try{list=JSON.parse(localStorage.getItem('educationOS_students')||'[]')}catch(x){}d.academicYears=[{id:'academic_'+d.id+'_'+d.schoolYear,year:d.schoolYear,stage:d.stage,grade:d.grade,school:d.school,path:d.path,subjects:d.subjects,goal:d.goal,createdAt:new Date().toISOString()}];list.push(d);localStorage.setItem('educationOS_students',JSON.stringify(list));hideStudent();form.reset();refreshStudentForm();if(window.renderEducationStudents)window.renderEducationStudents();alert('学生档案已建立，并已显示在学生档案中。')}
   document.addEventListener('click',function(e){
     const ef=e.target.closest('#editFamilyBtn');if(ef){e.preventDefault();e.stopPropagation();showFamily();return}
     const af=e.target.closest('#addStudentBtn');if(af){e.preventDefault();e.stopPropagation();showStudent();return}
