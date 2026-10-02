@@ -1525,4 +1525,163 @@
   setTimeout(()=>{enhanceCourseDetail();calendarActions();addPackageAlerts();taskWriteback()},300);
 })();
 </script>
+
+<style id="unified-form-style">
+#unifiedFormModal{position:fixed;inset:0;background:rgba(15,23,42,.48);z-index:5000;display:none;padding:20px;overflow:auto}
+#unifiedFormModal.show{display:flex;align-items:flex-start;justify-content:center}
+.uf-card{width:min(680px,100%);margin:30px auto;background:var(--surface,#fff);border:1px solid var(--border,#ddd);border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.18);overflow:hidden}
+.uf-head{padding:18px 22px;border-bottom:1px solid var(--border,#ddd);display:flex;justify-content:space-between;align-items:flex-start}
+.uf-head h2{margin:0;font-size:20px}.uf-close{border:0;background:transparent;font-size:24px;cursor:pointer;color:var(--muted)}
+.uf-body{padding:22px}.uf-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.uf-field{display:flex;flex-direction:column;gap:7px}.uf-field.full{grid-column:1/-1}.uf-field label{font-size:13px;color:var(--muted)}.uf-field input,.uf-field select,.uf-field textarea{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid var(--border,#ddd);border-radius:9px;background:var(--surface2,#fafafa);font:inherit}.uf-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}.uf-help{font-size:12px;color:var(--muted);margin-top:5px}@media(max-width:700px){.uf-grid{grid-template-columns:1fr}.uf-field.full{grid-column:auto}}
+</style>
+<div id="unifiedFormModal" aria-hidden="true">
+  <div class="uf-card" role="dialog" aria-modal="true">
+    <div class="uf-head"><div><h2 id="ufTitle">编辑</h2><div id="ufSub" class="label" style="margin-top:5px"></div></div><button class="uf-close" id="ufClose" type="button">×</button></div>
+    <form id="ufForm" class="uf-body"><div id="ufFields" class="uf-grid"></div><div class="uf-actions"><button type="button" class="link" id="ufCancel">取消</button><button type="submit" class="primary">保存</button></div></form>
+  </div>
+</div>
+<script id="unified-form-modal-v1">
+(function(){
+ const KEY='educationOS_relations',STU='educationOS_students';
+ const modal=document.getElementById('unifiedFormModal'),form=document.getElementById('ufForm'),fields=document.getElementById('ufFields');
+ if(!modal||!form)return;
+ const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+ const load=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return{}}};
+ const save=d=>{localStorage.setItem(KEY,JSON.stringify(d));window.dispatchEvent(new Event('educationOS:changed'));};
+ const students=()=>{try{return JSON.parse(localStorage.getItem(STU)||'[]')}catch(e){return[]}};
+ const uid=p=>p+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+ let submitAction=null;
+ function open(title,sub,defs,action){
+   document.getElementById('ufTitle').textContent=title;document.getElementById('ufSub').textContent=sub||'';fields.innerHTML='';
+   defs.forEach((f,i)=>{
+     const wrap=document.createElement('div');wrap.className='uf-field'+(f.full?' full':'');
+     let control='';
+     if(f.type==='textarea')control='<textarea name="'+esc(f.name)+'" rows="'+(f.rows||4)+'">'+esc(f.value||'')+'</textarea>';
+     else if(f.type==='select')control='<select name="'+esc(f.name)+'">'+(f.options||[]).map(o=>'<option value="'+esc(o)+'" '+(String(o)===String(f.value||'')?'selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';
+     else control='<input name="'+esc(f.name)+'" type="'+(f.type||'text')+'" value="'+esc(f.value||'')+'" '+(f.required?'required':'')+' step="'+(f.step||'')+'">';
+     wrap.innerHTML='<label>'+esc(f.label)+'</label>'+control+(f.help?'<div class="uf-help">'+esc(f.help)+'</div>':'');
+     fields.appendChild(wrap);
+   });
+   submitAction=action;modal.classList.add('show');modal.setAttribute('aria-hidden','false');
+   setTimeout(()=>fields.querySelector('input,select,textarea')?.focus(),30);
+ }
+ function close(){modal.classList.remove('show');modal.setAttribute('aria-hidden','true');submitAction=null;}
+ document.getElementById('ufClose').onclick=close;document.getElementById('ufCancel').onclick=close;modal.addEventListener('click',e=>{if(e.target===modal)close()});
+ form.addEventListener('submit',e=>{e.preventDefault();const data=Object.fromEntries(new FormData(form).entries());const fn=submitAction;close();if(fn)fn(data);});
+ function rerenderTasks(){
+   const box=document.getElementById('taskList');if(!box)return;
+   const d=load(),ts=Array.isArray(d.tasks)?d.tasks:[],ss=students();
+   box.innerHTML=ts.length?ts.map((x,i)=>'<div class="event"><div class="time">'+esc(x.due||'未定')+'</div><div><strong>'+esc(x.title)+'</strong><small>'+esc(x.studentName||'家庭任务')+'</small></div><span class="pill">'+esc(x.status||'待处理')+'</span><button class="link task-done" data-i="'+i+'">'+(x.status==='已完成'?'恢复待处理':'完成')+'</button></div>').join(''):'<span class="label">暂无任务。</span>';
+   const pending=ts.filter(x=>x.status!=='已完成').length,done=ts.filter(x=>x.status==='已完成').length;
+   const cards=document.querySelector('#tasksPage .cards');if(cards){const ms=cards.querySelectorAll('.metric');if(ms[0])ms[0].textContent=pending;if(ms[1])ms[1].textContent=done;}
+ }
+ function editLesson(lid,mode){
+   const d=load();const l=(d.lessons||[]).find(x=>String(x.id)===String(lid));if(!l)return;
+   open(mode==='new'?'记录实际上课':mode==='correct'?'更正课程':'修改课程','日期、时间和实际课时统一在这里维护。',[
+     {name:'date',label:'上课日期',type:'date',value:l.date||new Date().toISOString().slice(0,10),required:true},
+     {name:'time',label:'上课时间',type:'time',value:l.time||'17:00',required:true},
+     {name:'duration',label:'课时（小时）',type:'number',value:l.duration||1,step:'0.25',required:true},
+     {name:'status',label:'课程状态',type:'select',value:l.status||'已安排',options:['已安排','已完成','缺席','已取消','未完成']},
+     {name:'note',label:'备注',type:'textarea',value:l.note||'',full:true}
+   ],data=>{
+     const d2=load(),x=(d2.lessons||[]).find(a=>String(a.id)===String(lid));if(!x)return;
+     const oldDone=x.status==='已完成',newDone=data.status==='已完成',oldDur=Number(x.duration||0),newDur=Number(data.duration||0);
+     const c=(d2.courses||[]).find(a=>String(a.id)===String(x.courseId)),p=c&&(d2.packages||[]).find(a=>String(a.id)===String(c.packageId)||String(a.id)===String(x.packageId));
+     if(p&&oldDone!==newDone)p.usedHours=Math.max(0,Number(p.usedHours||0)+(newDone?newDur:-oldDur));
+     else if(p&&oldDone&&newDone&&oldDur!==newDur)p.usedHours=Math.max(0,Number(p.usedHours||0)-oldDur+newDur);
+     Object.assign(x,{date:data.date,time:data.time,duration:newDur,status:data.status,note:data.note,planned:data.status==='已安排'?true:false,updatedAt:new Date().toISOString()});
+     save(d2);
+   });
+ }
+ function newLessonForCourse(cid){
+   const d=load(),c=(d.courses||[]).find(x=>String(x.id)===String(cid));if(!c)return;
+   const l={id:uid('lesson'),courseId:String(cid),studentId:String(c.studentId),teacherId:String(c.teacherId||''),subjectId:String(c.subject||''),date:new Date().toISOString().slice(0,10),time:'17:00',duration:Number(c.duration||1),status:'已完成',note:''};
+   d.lessons=Array.isArray(d.lessons)?d.lessons:[];d.lessons.push(l);localStorage.setItem(KEY,JSON.stringify(d));editLesson(l.id,'new');
+ }
+ function feedbackForm(cid){
+   const d=load(),c=(d.courses||[]).find(x=>String(x.id)===String(cid));if(!c)return;
+   const t=(d.teachers||[]).find(x=>String(x.id)===String(c.teacherId));
+   open('添加教师反馈','反馈会绑定到学生、课程、老师和学年。',[
+     {name:'date',label:'反馈日期',type:'date',value:new Date().toISOString().slice(0,10),required:true},
+     {name:'status',label:'反馈状态',type:'select',value:'待跟进',options:['待跟进','待同步','已同步','已处理']},
+     {name:'content',label:'反馈内容',type:'textarea',value:'',full:true,required:true,rows:5}
+   ],data=>{
+     const d2=load();d2.feedbacks=Array.isArray(d2.feedbacks)?d2.feedbacks:[];d2.feedbacks.push({id:uid('feedback'),courseId:String(cid),studentId:String(c.studentId),teacherId:String(c.teacherId||''),teacherName:t?.name||'老师',date:data.date,content:data.content,status:data.status,createdAt:new Date().toISOString()});save(d2);
+   });
+ }
+ function feedbackTaskForm(fid){
+   const d=load(),f=(d.feedbacks||[]).find(x=>String(x.id)===String(fid));if(!f)return;
+   const s=students().find(x=>String(x.id)===String(f.studentId));
+   if((d.tasks||[]).some(t=>String(t.feedbackId)===String(fid)&&t.status!=='已完成')){alert('这条反馈已经有一个待处理跟进任务。');return;}
+   open('建立反馈跟进任务','任务完成后会自动回写教师反馈状态。',[
+     {name:'title',label:'任务名称',value:(s?.name||'学生')+' · 学习跟进',required:true},
+     {name:'due',label:'截止日期',type:'date',value:new Date(Date.now()+7*86400000).toISOString().slice(0,10),required:true},
+     {name:'note',label:'任务备注',type:'textarea',value:f.content||'',full:true}
+   ],data=>{
+     const d2=load();d2.tasks=Array.isArray(d2.tasks)?d2.tasks:[];d2.tasks.push({id:uid('task'),title:data.title,due:data.due,note:data.note,studentId:String(f.studentId),studentName:s?.name||'',courseId:String(f.courseId||''),feedbackId:String(fid),status:'待处理',source:'课程反馈'});f.status='待跟进';save(d2);
+   });
+ }
+ function feeForm(cid){
+   const d=load(),c=(d.courses||[]).find(x=>String(x.id)===String(cid));if(!c)return;
+   const completed=(d.lessons||[]).filter(l=>String(l.courseId)===String(cid)&&l.status==='已完成'&&!l.paymentId).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+   const l=completed[0];if(!l){alert('请先记录一节尚未登记费用的“已完成”课程。');return;}
+   open('记录课程费用','费用会绑定到学生、学年、课程和实际上课。',[
+     {name:'amount',label:'本节课程费用（新加坡元）',type:'number',value:'0',step:'0.01',required:true},
+     {name:'date',label:'费用日期',type:'date',value:l.date||new Date().toISOString().slice(0,10),required:true},
+     {name:'status',label:'费用状态',type:'select',value:'已支付',options:['已支付','待支付','已取消']},
+     {name:'note',label:'费用备注',type:'text',value:(c.name||c.subject||'课程')+' · '+l.date,full:true}
+   ],data=>{
+     const d2=load(),x=(d2.lessons||[]).find(a=>String(a.id)===String(l.id));if(!x||x.paymentId)return;
+     const s=students().find(a=>String(a.id)===String(c.studentId));const yr=Array.isArray(s?.academicYears)?s.academicYears.find(a=>String(a.year)===String(s.schoolYear)):null;
+     d2.payments=Array.isArray(d2.payments)?d2.payments:[];const p={id:uid('payment'),studentId:String(c.studentId),academicYearId:yr?.id||'',category:'补习',description:data.note,amount:Number(data.amount||0),date:data.date,status:data.status,courseId:String(cid),lessonId:String(l.id)};d2.payments.push(p);x.paymentId=p.id;save(d2);
+   });
+ }
+ function taskCapture(e){
+   const b=e.target.closest('.task-done');if(!b)return;
+   e.preventDefault();e.stopImmediatePropagation();
+   const d=load(),i=Number(b.dataset.i),t=(d.tasks||[])[i];if(!t)return;
+   t.status=t.status==='已完成'?'待处理':'已完成';t.completedAt=t.status==='已完成'?new Date().toISOString():'';save(d);rerenderTasks();
+ }
+ document.addEventListener('click',e=>{
+   const target=e.target.closest('#eduRecordLesson,#eduAddFeedback,#eduRecordFee,#eduCreateTask,[data-plan-edit],[data-fb-action],[data-detail-course]');
+   if(target){
+     if(target.id==='eduRecordLesson'){e.preventDefault();e.stopImmediatePropagation();newLessonForCourse(window.eduCurrentCourseId);return;}
+     if(target.id==='eduAddFeedback'){e.preventDefault();e.stopImmediatePropagation();feedbackForm(window.eduCurrentCourseId);return;}
+     if(target.id==='eduRecordFee'){e.preventDefault();e.stopImmediatePropagation();feeForm(window.eduCurrentCourseId);return;}
+     if(target.id==='eduCreateTask'){e.preventDefault();e.stopImmediatePropagation();
+       const d=load(),cid=window.eduCurrentCourseId,f=(d.feedbacks||[]).filter(x=>String(x.courseId)===String(cid)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0];
+       if(f)feedbackTaskForm(f.id);else alert('请先添加教师反馈，再建立跟进任务。');return;
+     }
+     if(target.matches('[data-plan-edit]')){e.preventDefault();e.stopImmediatePropagation();editLesson(target.dataset.planEdit,'edit');return;}
+     if(target.matches('[data-fb-action="task"]')){e.preventDefault();e.stopImmediatePropagation();feedbackTaskForm(target.dataset.fbId);return;}
+   }
+ },true);
+ document.addEventListener('click',e=>{taskCapture(e)},true);
+ document.addEventListener('click',e=>{
+   const b=e.target.closest('.lesson-edit,.lesson-correct,.lesson-view,.lesson-complete,.lesson-cancel,#addLessonBtn,#editSubjectTeachingBtn');
+   if(!b)return;
+   if(b.id==='addLessonBtn'){
+     e.preventDefault();e.stopImmediatePropagation();
+     const subjectPage=document.getElementById('studentSubjectProfilePage'),title=document.getElementById('pageSub')?.textContent||'';const parts=title.split(' · ');const id=window._subjectStudentId,year=window._subjectYear,sub=window._subjectName;
+     if(id&&year&&sub){
+       const d=load(),s=students().find(x=>String(x.id)===String(id));const c=(d.courses||[]).find(x=>String(x.id)===String((s?.academicYears||[]).find(y=>String(y.year)===String(year))?.subjectRecords?.[sub]?.courseId));
+       const temp={id:uid('lesson'),courseId:c?.id||'',studentId:String(id),teacherId:c?.teacherId||'',subjectId:sub,academicYearId:String(year),date:new Date().toISOString().slice(0,10),time:'17:00',duration:Number(c?.duration||1),status:'已安排',note:''};d.lessons=Array.isArray(d.lessons)?d.lessons:[];d.lessons.push(temp);localStorage.setItem(KEY,JSON.stringify(d));editLesson(temp.id,'new');return;
+     }
+   }
+   if(b.classList.contains('lesson-edit')||b.classList.contains('lesson-correct')){e.preventDefault();e.stopImmediatePropagation();editLesson(b.dataset.lessonId,b.classList.contains('lesson-correct')?'correct':'edit');return;}
+   if(b.id==='editSubjectTeachingBtn'){e.preventDefault();e.stopImmediatePropagation();
+     const title=document.getElementById('pageSub')?.textContent||'',parts=title.split(' · ');const id=window._subjectStudentId,year=window._subjectYear,sub=window._subjectName;if(!id)return;
+     const d=load(),s=students().find(x=>String(x.id)===String(id)),yr=(s?.academicYears||[]).find(x=>String(x.year)===String(year));const rec=yr?.subjectRecords?.[sub]||{};
+     open('编辑科目教学资料','老师、课程、课时包和频率统一维护。',[
+       {name:'teacher',label:'老师',value:rec.teacher||''},{name:'course',label:'课程 / 补习',value:rec.course||''},{name:'package',label:'课时包',value:rec.package||''},{name:'totalHours',label:'课时包总课时',type:'number',value:rec.totalHours||20,step:'0.5'},{name:'totalAmount',label:'课时包总金额（新加坡元）',type:'number',value:rec.totalAmount||0,step:'0.01'},{name:'frequency',label:'上课频率',value:rec.frequency||''}
+     ],data=>{
+       const list=students(),idx=list.findIndex(x=>String(x.id)===String(id));if(idx<0)return;const st=list[idx],years=Array.isArray(st.academicYears)?st.academicYears:[],pos=years.findIndex(x=>String(x.year)===String(year));const y=pos>=0?years[pos]:{id:'academic_'+id+'_'+year,year:String(year)};y.subjectRecords=y.subjectRecords||{};y.subjectRecords[sub]={...rec,teacher:data.teacher,course:data.course,package:data.package,totalHours:Number(data.totalHours||0),totalAmount:Number(data.totalAmount||0),frequency:data.frequency};if(pos>=0)years[pos]=y;else years.push(y);st.academicYears=years;list[idx]=st;localStorage.setItem(STU,JSON.stringify(list));window.dispatchEvent(new Event('educationOS:changed'));if(window.showSubjectProfileFromYear)window.showSubjectProfileFromYear(id,year,sub);
+     });return;
+   }
+ },true);
+ // 为科目页面保存当前上下文，供统一弹窗使用
+ const oldShow=window.showSubjectProfileFromYear;
+ if(oldShow)window.showSubjectProfileFromYear=function(id,year,sub){window._subjectStudentId=id;window._subjectYear=String(year);window._subjectName=sub;return oldShow(id,year,sub)};
+})();
+</script>
 </body></html>
