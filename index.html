@@ -297,16 +297,11 @@ return cd([['✅ 全部任务',tasks.length,'覆盖学生与家长'],['已完成
 '<section class="section"><div class="section-head"><h2>任务清单</h2><div class="tabs" id="tkTabs">'+['全部','','','家长'].map(x=>'<button class="'+(x===tf?'on':'')+'" data-f="'+x+'">'+x+'</button>').join('')+'</div></div><div class="card">'+f.map(t=>'<div class="chk'+(t[3]?' done':'')+'" data-i="'+tasks.indexOf(t)+'"><div class="box">'+(t[3]?'✓':'')+'</div><span class="t" style="flex:1">'+t[1]+'</span><span class="pill">'+t[0]+'</span><span class="label">'+t[2]+'</span></div>').join('')+'</div></section>'}
 function pendPage(){return cd([['🔔 待处理',pend.length,'需要家长处理'],['高优先级',pend.filter(p=>p[0]==='danger').length,'建议今天处理'],['💰 缴费',pend.filter(p=>p[1]==='缴费').length,'待付款'],['已处理',6-pend.length,'本次已完成']])+sec('待处理事项','点击按钮即可处理','<div class="attention" style="border:0;padding:0">'+(pend.map((p,i)=>'<div class="item" style="display:flex;justify-content:space-between;gap:10px;align-items:center"><span><span class="tag '+p[0]+'">'+p[1]+'</span>'+p[2]+'</span><button class="act" data-i="'+i+'">'+p[3]+'</button></div>').join('')||'<div class="item label">🎉 全部处理完毕</div>')+'</div>')}
 const pages={
-'家庭事务':()=>cd([['📁 家庭文件',12,'证件 / 保险 / 学校文件'],['⏳ 即将到期',3,'60 天内'],['🛡️ 保险',4,'医疗 / 意外 / 教育'],['🔁 订阅',5,'学习 App 与会员']])+
-'<section class="section two"><div><div class="section-head"><h2>证件与有效期</h2></div><div class="card">'+fr([[' · 护照','2029-03 到期'],[' · 护照','2027-01 · 即将到期 ⚠️'],[' · 学生交通优惠卡','2026-12 续期'],[' · 儿童疫苗记录','最新 2026-05']])+'</div></div><div><div class="section-head"><h2>保险</h2></div><div class="card">'+fr([[' · 医疗 / 意外','每年 $420 · 2027-02'],[' · 医疗 / 意外','每年 $380 · 2027-02'],['教育储蓄计划','每月 $300'],['补习机构保险','无']])+'</div></div></section>'+
-sec('学校与表格','家长需签署 / 提交',fr([[' · 校际田径赛家长同意书','待签署 · 10/03'],[' · 学校 Learning Journey','已提交'],[' · P5 家长会回条','已确认'],[' · 疫苗接种通知','待查看']]))+
-sec('订阅与会员','每月 / 每年',fr([['学习 App（英语词汇）','$12 / 月'],['在线数学题库','$38 / 月'],['图书馆阅读卡','免费'],['年度订阅合计','约 $720 / 年']]))+
-sec('常用联系人','',fr([['学校办公室','6xxx xxxx'],['陈老师 · English','WhatsApp'],['王老师 · Mathematics','WhatsApp'],['李先生 · 主司机','电话']])),
-'任务':taskPage,'待处理':pendPage,
-'家庭报告':()=>cd([['💰 本月支出','$1,700','补习 75% · 活动 14% · 接送 11%'],['🎓 课程出勤','18 / 18','全部完成'],['🚗 接送准时','94%','17 / 18 准时'],['📈 平均进步','+6%','较上月']])+
-'<section class="section two"><div><div class="section-head"><h2>学习进度</h2></div><div class="learning">'+pb([[' · English','82%',82],[' · Mathematics','70%',70],[' · Science','73%',73],[' · Mathematics','64%',64,1],[' · English','78%',78]])+'</div></div><div><div class="section-head"><h2>费用 · 按科目</h2></div><div class="learning">'+pb([['Mathematics','$580 · 45%',45],['English','$480 · 38%',38],['Science','$220 · 17%',17]])+'</div></div></section>'+
-sec('老师反馈摘要','本月',fr([['陈老师 ·  English','词汇掌握提升，继续加强语境'],['王老师 ·  Mathematics','分数基础需巩固'],['周老师 ·  Science','实验题表现稳定']]))+
-sec('下月建议','由本月数据生成','<div class="attention" style="border:0;padding:0"><div class="item"><span class="tag warn">学习</span> 数学增加 1 节巩固课</div><div class="item"><span class="tag warn">费用</span>续购  English 课时包，预留 $1,700</div><div class="item"><span class="tag danger">规划</span>开始整理  2027 DSA-Sec 候选学校</div></div>')};
+'家庭事务':()=>'<div class="card"><div class="section-head"><h2>家庭事务</h2><button class="link" id="legacyAffairAdd">＋ 新增事务</button></div><div id="legacyAffairList"><span class="label">暂无家庭事务。</span></div></div>',
+'任务':()=>'<div class="card"><div class="section-head"><h2>任务</h2><button class="link" id="legacyTaskAdd">＋ 新增任务</button></div><div id="legacyTaskList"><span class="label">暂无任务。</span></div></div>',
+'待处理':()=>'<div class="card"><div class="section-head"><h2>待处理</h2></div><span class="label">系统会根据真实任务、冲突和接送记录自动汇总。</span></div>',
+'家庭报告':()=>'<div class="card"><div class="section-head"><h2>家庭报告</h2></div><span class="label">报告将根据家庭实际学生、课程、学业、接送与费用记录自动生成。</span></div>'
+};
 function bindX(n){if(n==='任务'){X.querySelectorAll('#tkTabs button').forEach(b=>b.onclick=()=>{tf=b.dataset.f;showX(n)});X.querySelectorAll('.chk').forEach(c=>c.onclick=()=>{const t=tasks[c.dataset.i];t[3]=t[3]?0:1;showX(n)})}if(n==='待处理')X.querySelectorAll('.act').forEach(b=>b.onclick=()=>{pend.splice(b.dataset.i,1);showX(n)})}
 function showX(n){X.innerHTML=pages[n]();X.style.display='block';bindX(n)}
 buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const n=b.dataset.page;if(pages[n]){ph.style.display='none';showX(n);pageTitle.textContent=n;pageSub.textContent={'家庭事务':'管理证件、保险、学校表格、订阅与常用联系人。','任务':'学生与家长的待办任务，点击即可完成。','待处理':'需要家长确认、付款或处理的事项。','家庭报告':'汇总学习、费用、出勤与接送，并给出下月建议。'}[n]}}));
@@ -808,9 +803,9 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
   }
     function bindManagementActions(){
     const r=ensureStore();
-    document.getElementById('addAffairBtn')?.addEventListener('click',()=>{const title=prompt('事务名称');if(!title)return;const date=prompt('日期','2026-10-03')||'';const note=prompt('备注','')||'';r.affairs.push({id:'affair_'+Date.now(),title,date,note});save(REL,r);renderManagementPages()});
+    document.getElementById('addAffairBtn')?.addEventListener('click',()=>{const title=prompt('事务名称');if(!title)return;const date=prompt('日期',new Date().toISOString().slice(0,10))||'';const note=prompt('备注','')||'';r.affairs.push({id:'affair_'+Date.now(),title,date,note});save(REL,r);renderManagementPages()});
     document.querySelectorAll('.affair-del').forEach(b=>b.addEventListener('click',()=>{r.affairs.splice(Number(b.dataset.i),1);save(REL,r);renderManagementPages()}));
-    document.getElementById('addTaskBtn')?.addEventListener('click',()=>{const title=prompt('任务名称');if(!title)return;const due=prompt('截止日期','2026-10-03')||'';const studentName=prompt('关联学生（可留空）','')||'';r.tasks.push({id:'task_'+Date.now(),title,due,studentName,status:'待处理'});save(REL,r);renderManagementPages()});
+    document.getElementById('addTaskBtn')?.addEventListener('click',()=>{const title=prompt('任务名称');if(!title)return;const due=prompt('截止日期',new Date().toISOString().slice(0,10))||'';const studentName=prompt('关联学生（可留空）','')||'';r.tasks.push({id:'task_'+Date.now(),title,due,studentName,status:'待处理'});save(REL,r);renderManagementPages()});
     document.querySelectorAll('.task-done').forEach(b=>b.addEventListener('click',()=>{const x=r.tasks[Number(b.dataset.i)];x.status=x.status==='已完成'?'待处理':'已完成';save(REL,r);renderManagementPages()}));
   }
   function renderTransport(){
@@ -887,7 +882,7 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
     document.getElementById('addTransportBtn')?.addEventListener('click',()=>{
       if(!ss.length){alert('请先建立学生档案。');return;}
       const names=ss.map((s,i)=>(i+1)+'. '+s.name).join('\\n');const si=Number(prompt('选择学生编号\\n'+names,'1'))-1;const student=ss[si];if(!student)return;
-      const date=prompt('日期','2026-10-03')||'';const time=prompt('时间','17:00')||'';const from=prompt('出发地点','学校')||'';const to=prompt('目的地','家庭')||'';
+      const date=prompt('日期',new Date().toISOString().slice(0,10))||'';const time=prompt('时间','17:00')||'';const from=prompt('出发地点','学校')||'';const to=prompt('目的地','家庭')||'';
       const ds=drivers.length?drivers.map((d,i)=>(i+1)+'. '+d.name).join('\\n'):'无司机资料';const di=drivers.length?Number(prompt('选择司机编号\\n'+ds,'1'))-1:-1;const driver=drivers[di];
       const vs=vehicles.length?vehicles.map((v,i)=>(i+1)+'. '+v.number).join('\\n'):'无车辆资料';const vi=vehicles.length?Number(prompt('选择车辆编号\\n'+vs,'1'))-1:-1;const vehicle=vehicles[vi];
       const status=prompt('状态：待确认 / 已确认 / 已完成 / 已取消','待确认')||'待确认';const note=prompt('备注','')||'';
@@ -897,7 +892,7 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
     document.getElementById('addTempBtn')?.addEventListener('click',()=>{
       if(!ss.length){alert('请先建立学生档案。');return;}
       const names=ss.map((s,i)=>(i+1)+'. '+s.name).join('\\n');const si=Number(prompt('选择学生编号\\n'+names,'1'))-1;const student=ss[si];if(!student)return;
-      const date=prompt('日期','2026-10-03')||'';const time=prompt('时间','17:00')||'';const type=prompt('安排类型','临时接送')||'临时接送';const from=prompt('出发地点','')||'';const to=prompt('目的地','')||'';const note=prompt('备注','')||'';
+      const date=prompt('日期',new Date().toISOString().slice(0,10))||'';const time=prompt('时间','17:00')||'';const type=prompt('安排类型','临时接送')||'临时接送';const from=prompt('出发地点','')||'';const to=prompt('目的地','')||'';const note=prompt('备注','')||'';
       const ds=drivers.length?drivers.map((d,i)=>(i+1)+'. '+d.name).join('\\n'):'无司机资料';const di=drivers.length?Number(prompt('选择司机编号\\n'+ds,'1'))-1:-1;const driver=drivers[di];
       const vs=vehicles.length?vehicles.map((v,i)=>(i+1)+'. '+v.number).join('\\n'):'无车辆资料';const vi=vehicles.length?Number(prompt('选择车辆编号\\n'+vs,'1'))-1:-1;const vehicle=vehicles[vi];
       temps.push({id:'temp_'+Date.now(),studentId:String(student.id),date,time,type,from,to,driverId:driver?String(driver.id):'',vehicleId:vehicle?String(vehicle.id):'',note,title:type+' · '+student.name});
