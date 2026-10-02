@@ -238,7 +238,7 @@
   </section>
   <div id="planningPage" style="display:none"><section class="section" style="margin-top:0"><div class="section-head"><div><h2>学校 / DSA规划</h2><span class="label">按学生与学年记录升学路径，不建立学校 Master</span></div><button class="link" id="addPlanningBtn">＋ 新增升学规划</button></div><div class="card"><div class="label">设计原则</div><div style="margin-top:8px;line-height:1.8">P6 → S1 建立新的学年档案；小学历史资料保留。学校为学生学年记录中的自由文本。DSA 目标、申请进度、结果与最终学校分别记录。</div></div><div class="grid" id="planningCards"></div></section></div>
   <div id="feesPage" style="display:none">
-<section class="section" style="margin-top:0"><div class="section-head"><h2>💰 家庭费用</h2><div class="tabs" id="feeChild"><button class="on" data-c="all">全家</button><button data-c="Jason">Jason</button><button data-c="Amy">Amy</button></div></div>
+<section class="section" style="margin-top:0"><div class="section-head"><div><h2>💰 家庭费用</h2><span class="label">所有金额均来自费用记录；课时包余额来自统一课时包与上课记录</span></div><div style="display:flex;gap:10px;align-items:center"><button class="link" id="addFeeBtn">＋ 新增费用</button><div class="tabs" id="feeChild"><button class="on" data-c="all">全家</button><button data-c="Jason">Jason</button><button data-c="Amy">Amy</button></div></div></div>
 <div class="cards"><div class="card"><span class="label">本月合计</span><div class="metric" id="fTotal"></div><span class="label">2026 年 10 月</span></div><div class="card"><span class="label">📚 补习</span><div class="metric" id="fTuition"></div><span class="label" id="fTuitionN"></span></div><div class="card"><span class="label">🎨 活动</span><div class="metric" id="fAct"></div><span class="label" id="fActN"></span></div><div class="card"><span class="label">🚗 接送</span><div class="metric" id="fTrans"></div><span class="label">司机 / 车辆费用</span></div></div></section>
 <section class="section"><div class="grid"><div><div class="section-head"><h2>补习费用 · 按科目</h2><span class="pill">按节收费</span></div><div class="card ovr"><table class="ft"><thead><tr><th>学生 / 科目</th><th>老师</th><th>收费</th><th class="r">本月</th><th>状态</th></tr></thead><tbody id="tuitionRows"></tbody></table></div></div>
 <div><div class="section-head"><h2>科目费用占比</h2><span class="label">本月补习</span></div><div class="learning" id="subjBars"></div><div class="section-head" style="margin-top:18px"><h2>课时包余额</h2></div><div class="learning" id="pkgBars"></div></div></div></section>
@@ -296,33 +296,116 @@ const yearData={jason:{2026:{title:'2026 · Primary 5',status:'当前学年',sch
 document.querySelectorAll('.year-switch').forEach(btn=>btn.addEventListener('click',()=>{const child=btn.dataset.child;const data=yearData[child][btn.dataset.year];document.querySelectorAll('.year-switch[data-child="'+child+'"]').forEach(x=>{x.classList.remove('active-year');x.style.fontWeight='';x.style.boxShadow='';});btn.classList.add('active-year');btn.style.fontWeight='700';btn.style.boxShadow='0 0 0 2px var(--green2)';document.getElementById(child+'YearTitle').textContent=data.title;document.getElementById(child+'YearStatus').textContent=data.status;document.getElementById(child+'School').textContent=data.school;document.getElementById(child+'Path').textContent=data.path;document.getElementById(child+'Subjects').textContent=data.subjects;document.getElementById(child+'Goal').textContent=data.goal;document.getElementById(child+'Exam').textContent=data.exam;document.getElementById(child+'Courses').textContent=data.courses;document.getElementById(child+'Feedback').textContent=data.feedback;document.getElementById(child+'Dsa').textContent=data.dsa;document.getElementById(child+'Record').textContent=data.record;}));
 buttons.forEach(b=>b.addEventListener('click',()=>{buttons.forEach(x=>x.classList.remove('active'));b.classList.add('active');const p=b.dataset.page;dash.style.display='none';family.style.display='none';childProfile.style.display='none';dsa.style.display='none';familySchedule.style.display='none';transportPage.style.display='none';educationPage.style.display='none';academicPage.style.display='none';document.getElementById('feesPage').style.display='none';document.getElementById('moeSubjectExplorer').style.display='none';const subjectSettings=document.getElementById('subjectSettingsPage');if(subjectSettings)subjectSettings.style.display='none';ph.style.display='none';if(p==='首页'){dash.style.display='block';pageTitle.textContent='家庭首页';pageSub.textContent='今天是 10 月 1 日，先看看家庭今天的安排。'}else if(p==='客户 / 家庭档案'){family.style.display='block';pageTitle.textContent='客户 / 家庭档案';pageSub.textContent='管理家庭资料，并以学生档案作为后续教育管理的核心。'}else if(p==='学生完整档案'){childProfile.style.display='block';pageTitle.textContent='学生完整档案';pageSub.textContent='以学生为核心，长期保存每一个学年的学习、教育与升学记录。'}else if(p==='家庭日程'){familySchedule.style.display='block';pageTitle.textContent='家庭日程';pageSub.textContent='统一管理家庭、学生、课程、接送与重要事项的时间安排。'}else if(p==='接送管理'){transportPage.style.display='block';pageTitle.textContent='接送管理';pageSub.textContent='统一管理学生、司机、车辆、接送任务、临时安排与时间冲突。'}else if(p==='教育管理'){educationPage.style.display='block';pageTitle.textContent='教育管理';pageSub.textContent='统一管理老师、课程、课时包、活动与教师反馈，并连接学生学年档案。'}else if(p==='学业管理'){academicPage.style.display='block';document.getElementById('moeSubjectExplorer').style.display='block';pageTitle.textContent='学业管理';pageSub.textContent='按新加坡 MOE 学段、年级与科目结构管理学生每一学年的学业记录。'}else if(p==='学科设置'){const subjectSettings=document.getElementById('subjectSettingsPage');if(subjectSettings)subjectSettings.style.display='block';pageTitle.textContent='学科设置';pageSub.textContent='统一管理小学、中学与初级学院的学科 Master、科目层级与学校实际开设。'}else if(p==='家庭费用'){document.getElementById('feesPage').style.display='block';pageTitle.textContent='家庭费用';pageSub.textContent='按学生、科目与活动项目查看补习及其他教育费用，并跟踪缴费状态。'}else if(p==='学校 / DSA规划'){dsa.style.display='block';pageTitle.textContent='学校 / DSA规划';pageSub.textContent='把学校路径、DSA方向与学生长期发展放在同一张规划图里。'}else{ph.style.display='block';title.textContent=p;pageTitle.textContent=p;pageSub.textContent='家庭教育管家的核心管理空间';}}));
 
-const fees=[
-{c:'Jason',t:'补习',n:'English',w:'陈老师 · Online',u:'4 节 × $85',a:340,s:'已付',sub:'English'},
-{c:'Jason',t:'补习',n:'Mathematics',w:'林老师 · 到府',u:'4 节 × $80',a:320,s:'已付',sub:'Mathematics'},
-{c:'Jason',t:'补习',n:'Science',w:'周老师 · 小班',u:'4 节 × $55',a:220,s:'待付',sub:'Science'},
-{c:'Amy',t:'补习',n:'Mathematics',w:'王老师 · Online',u:'4 节 × $65',a:260,s:'已付',sub:'Mathematics'},
-{c:'Amy',t:'补习',n:'English 阅读',w:'陈老师 · 一对一',u:'2 节 × $70',a:140,s:'已付',sub:'English'},
-{c:'Jason',t:'活动',n:'田径专项训练 (DSA Sports)',w:'运动学院',u:'4 次 × $30',a:120,s:'已付',k:'运动 / DSA'},
-{c:'Amy',t:'活动',n:'美术班',w:'艺术中心',u:'月费',a:70,s:'待付',k:'兴趣'},
-{c:'Jason',t:'活动',n:'校际田径赛报名',w:'一次性',u:'报名费',a:50,s:'已付',k:'比赛'},
-{c:'家庭',t:'接送',n:'司机 / 车辆费用',w:'李先生 · 王女士',u:'本月',a:180,s:'已付'}];
-const ups=[['warn','Amy 美术班 10 月费用 $70','10/05'],['warn','Jason Science 10 月课费 $220','10/08'],['danger','年终 Learning Camp 报名 $380（Jason）','10/15 截止'],['warn','Amy 钢琴 ABRSM 考试费 $128','10/20'],['warn','Jason English 课时包续购（剩 12 节）$1,700 / 20 节','11/30 前']];
-let fc='all';const $=id=>document.getElementById(id),m=v=>'$'+v.toLocaleString(),sum=a=>a.reduce((x,y)=>x+y.a,0);
-const stc=s=>s==='已付'?'st-ok':s==='待付'?'st-wait':'st-over';
-function bars(el,rows,tot){$(el).innerHTML=rows.map(r=>'<div class="progress-row"><div class="progress-label"><span>'+r[0]+'</span><b>'+r[1]+'</b></div><div class="bar"><div class="fill" style="width:'+r[2]+'%"></div></div></div>').join('')}
-function renderFees(){const f=fees.filter(x=>fc==='all'||x.c===fc||(x.c==='家庭'&&fc==='all')),T=f.filter(x=>x.t==='补习'),A=f.filter(x=>x.t==='活动'),R=f.filter(x=>x.t==='接送'),tot=sum(f);
-$('fTotal').textContent=m(tot);$('fTuition').textContent=m(sum(T));$('fAct').textContent=m(sum(A));$('fTrans').textContent=m(sum(R));
-$('fTuitionN').textContent=T.length+' 个科目课程';$('fActN').textContent=A.length+' 个活动项目';
-const row=x=>'<tr><td><b>'+x.c+' · '+x.n+'</b></td><td class="label">'+(x.t==='活动'?x.k:x.w)+'</td><td>'+x.u+'</td><td class="r"><b>'+m(x.a)+'</b></td><td class="'+stc(x.s)+'">● '+x.s+'</td></tr>';
-$('tuitionRows').innerHTML=T.map(row).join('')+'<tr><td colspan="3"><b>补习合计</b></td><td class="r"><b>'+m(sum(T))+'</b></td><td></td></tr>';
-$('actRows').innerHTML=A.map(row).join('')+'<tr><td colspan="3"><b>活动合计</b></td><td class="r"><b>'+m(sum(A))+'</b></td><td></td></tr>';
-const subs={};T.forEach(x=>subs[x.sub]=(subs[x.sub]||0)+x.a);const ts=sum(T)||1;
-bars('subjBars',Object.entries(subs).map(([k,v])=>[k,m(v)+' · '+Math.round(v/ts*100)+'%',Math.round(v/ts*100)]));
-const pk=[['Jason · English','12 / 20 节',60,'Jason'],['Amy · Mathematics','8 / 16 节',50,'Amy'],['Jason · Mathematics','6 / 12 节',50,'Jason']].filter(x=>fc==='all'||x[3]===fc);bars('pkgBars',pk);
-const ct=[['补习',sum(T)],['活动',sum(A)],['接送',sum(R)]];bars('catBars',ct.map(([k,v])=>[k,m(v)+' · '+Math.round(v/(tot||1)*100)+'%',Math.round(v/(tot||1)*100)]));
-const k=fc==='all'?2:1;$('fAvg').textContent=m(Math.round(tot/k));$('fYear').textContent=m(Math.round(tot*12*(fc==='all'?1:1)));
-$('upRows').innerHTML=ups.filter(u=>fc==='all'||u[1].indexOf(fc)>-1).map(u=>'<div class="item"><span class="tag '+u[0]+'">'+u[2]+'</span>'+u[1]+'</div>').join('')||'<div class="item label">暂无</div>'}
-document.querySelectorAll('#feeChild button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#feeChild button').forEach(x=>x.classList.remove('on'));b.classList.add('on');fc=b.dataset.c;renderFees()}));renderFees();
+// 家庭费用：唯一财务事实来源为 educationOS_relations.payments
+let fc='all';
+const feeEsc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const feeMoney=v=>'$'+Number(v||0).toLocaleString('en-SG',{maximumFractionDigits:0});
+const feeStatusClass=s=>s==='已支付'?'st-ok':s==='待支付'?'st-wait':'st-over';
+function feeStudentName(id){
+  const ss=typeof allStudents==='function'?allStudents():[];
+  const s=ss.find(x=>String(x.id)===String(id));
+  return s?.name||'家庭';
+}
+function feeSubjectName(id){
+  const s=typeof allStudents==='function'?allStudents().find(x=>false):null;
+  return id||'未指定';
+}
+function feeAcademicYear(studentId,date){
+  const ss=typeof allStudents==='function'?allStudents():[];
+  const s=ss.find(x=>String(x.id)===String(studentId));
+  if(!s)return '';
+  const ys=Array.isArray(s.academicYears)?s.academicYears:[];
+  const y=ys.find(x=>String(x.year)===String(String(date||'').slice(0,4)));
+  return y?.id||'';
+}
+function seedFeeData(){
+  const r=ensureStore();
+  if(Array.isArray(r.payments)&&r.payments.length)return r;
+  const ss=typeof allStudents==='function'?allStudents():[];
+  const sid=name=>ss.find(x=>x.name===name)?.id||('legacy_'+name.toLowerCase());
+  const month='2026-10';
+  r.payments=[
+    {id:'payment_demo_jason_english',studentId:sid('Jason'),category:'补习',description:'English',amount:340,date:month+'-01',status:'已支付',teacherName:'陈老师',subjectId:'English'},
+    {id:'payment_demo_jason_math',studentId:sid('Jason'),category:'补习',description:'Mathematics',amount:320,date:month+'-01',status:'已支付',teacherName:'林老师',subjectId:'Mathematics'},
+    {id:'payment_demo_jason_science',studentId:sid('Jason'),category:'补习',description:'Science',amount:220,date:month+'-01',status:'待支付',teacherName:'周老师',subjectId:'Science'},
+    {id:'payment_demo_amy_math',studentId:sid('Amy'),category:'补习',description:'Mathematics',amount:260,date:month+'-01',status:'已支付',teacherName:'王老师',subjectId:'Mathematics'},
+    {id:'payment_demo_amy_english',studentId:sid('Amy'),category:'补习',description:'English 阅读',amount:140,date:month+'-01',status:'已支付',teacherName:'陈老师',subjectId:'English'},
+    {id:'payment_demo_jason_track',studentId:sid('Jason'),category:'活动',description:'田径专项训练（DSA Sports）',amount:120,date:month+'-01',status:'已支付',subjectId:''},
+    {id:'payment_demo_amy_art',studentId:sid('Amy'),category:'活动',description:'美术班',amount:70,date:month+'-01',status:'待支付',subjectId:''},
+    {id:'payment_demo_jason_race',studentId:sid('Jason'),category:'活动',description:'校际田径赛报名',amount:50,date:month+'-01',status:'已支付',subjectId:''},
+    {id:'payment_demo_transport',studentId:'',category:'接送',description:'司机 / 车辆费用',amount:180,date:month+'-01',status:'已支付',subjectId:''}
+  ];
+  saveEducationRelations(r); return r;
+}
+function feeTeacherFor(p,r){
+  if(p.teacherId){
+    const t=(r.teachers||[]).find(x=>String(x.id)===String(p.teacherId));
+    if(t)return t.name;
+  }
+  return p.teacherName||'未指定';
+}
+function feeCourseFor(p,r){
+  if(p.courseId){
+    const c=(r.courses||[]).find(x=>String(x.id)===String(p.courseId));
+    if(c)return c.name;
+  }
+  return '';
+}
+function feePackageRows(r){
+  const ss=typeof allStudents==='function'?allStudents():[];
+  return (r.packages||[]).filter(p=>{
+    const n=feeStudentName(p.studentId);
+    return fc==='all'||n===fc;
+  }).map(p=>{
+    const total=Number(p.totalHours||0),used=Number(p.usedHours||0),remain=Math.max(0,total-used);
+    const pct=total?Math.min(100,Math.round(used/total*100)):0;
+    const label=feeStudentName(p.studentId)+' · '+(p.subjectId||p.name||'课时包');
+    return [label,remain+' / '+total+' 节',pct];
+  });
+}
+function feeBars(el,rows){
+  const box=$(el);if(!box)return;
+  box.innerHTML=rows.length?rows.map(x=>'<div class="progress-row"><div class="progress-label"><span>'+feeEsc(x[0])+'</span><b>'+feeEsc(x[1])+'</b></div><div class="bar"><div class="fill" style="width:'+Math.max(0,Math.min(100,x[2]||0))+'%"></div></div></div>').join(''):'<div class="item label">暂无数据</div>';
+}
+function renderFees(){
+  const r=seedFeeData(),payments=Array.isArray(r.payments)?r.payments:[],month=new Date().toISOString().slice(0,7);
+  const f=payments.filter(x=>(x.date||'').slice(0,7)===month&&(fc==='all'||feeStudentName(x.studentId)===fc||(!x.studentId&&fc==='all')));
+  const T=f.filter(x=>x.category==='补习'),A=f.filter(x=>x.category==='活动'),R=f.filter(x=>x.category==='接送');
+  const total=a=>a.reduce((n,x)=>n+Number(x.amount||0),0),tot=total(f);
+  $('fTotal').textContent=feeMoney(tot);$('fTuition').textContent=feeMoney(total(T));$('fAct').textContent=feeMoney(total(A));$('fTrans').textContent=feeMoney(total(R));
+  $('fTuitionN').textContent=T.length+' 条费用记录';$('fActN').textContent=A.length+' 个活动费用记录';
+  const tuitionRow=p=>'<tr><td><b>'+feeEsc(feeStudentName(p.studentId)+' · '+(p.description||'补习'))+'</b></td><td class="label">'+feeEsc(feeTeacherFor(p,r))+'</td><td>'+feeMoney(p.amount)+'</td><td class="r"><b>'+feeMoney(p.amount)+'</b></td><td class="'+feeStatusClass(p.status)+'">● '+feeEsc(p.status||'未设置')+'</td></tr>';
+  const activityRow=p=>'<tr><td><b>'+feeEsc(feeStudentName(p.studentId)+' · '+(p.description||'活动'))+'</b></td><td class="label">'+feeEsc(p.activityType||'活动')+'</td><td>'+feeMoney(p.amount)+'</td><td class="r"><b>'+feeMoney(p.amount)+'</b></td><td class="'+feeStatusClass(p.status)+'">● '+feeEsc(p.status||'未设置')+'</td></tr>';
+  $('tuitionRows').innerHTML=T.length?T.map(tuitionRow).join('')+'<tr><td colspan="3"><b>补习合计</b></td><td class="r"><b>'+feeMoney(total(T))+'</b></td><td></td></tr>':'<tr><td colspan="5" class="label">本月暂无补习费用记录</td></tr>';
+  $('actRows').innerHTML=A.length?A.map(activityRow).join('')+'<tr><td colspan="3"><b>活动合计</b></td><td class="r"><b>'+feeMoney(total(A))+'</b></td><td></td></tr>':'<tr><td colspan="5" class="label">本月暂无活动费用记录</td></tr>';
+  const subs={};T.forEach(x=>{const k=x.subjectId||x.description||'未指定科目';subs[k]=(subs[k]||0)+Number(x.amount||0)});const ts=total(T)||1;
+  feeBars('subjBars',Object.entries(subs).map(([k,v])=>[k,feeMoney(v)+' · '+Math.round(v/ts*100)+'%',Math.round(v/ts*100)]));
+  feeBars('pkgBars',feePackageRows(r));
+  const cats=[['补习',total(T)],['活动',total(A)],['接送',total(R)]],base=tot||1;
+  feeBars('catBars',cats.map(x=>[x[0],feeMoney(x[1])+' · '+Math.round(x[1]/base*100)+'%',Math.round(x[1]/base*100)]));
+  const studentCount=fc==='all'?Math.max(1,(typeof allStudents==='function'?allStudents():[]).length):1;
+  $('fAvg').textContent=feeMoney(Math.round(tot/studentCount));$('fYear').textContent=feeMoney(Math.round(tot*12));
+  const upcoming=payments.filter(x=>x.status==='待支付'&&(!x.dueDate||x.dueDate>=new Date().toISOString().slice(0,10))&&(fc==='all'||feeStudentName(x.studentId)===fc)).slice(0,8);
+  $('upRows').innerHTML=upcoming.length?upcoming.map(x=>'<div class="item"><span class="tag warn">'+feeEsc(x.dueDate||'待处理')+'</span>'+feeEsc(feeStudentName(x.studentId)+' · '+(x.description||x.category))+' '+feeMoney(x.amount)+'</div>').join(''):'<div class="item label">暂无待支付费用</div>';
+}
+function addFeeRecord(){
+  const r=ensureStore(),ss=typeof allStudents==='function'?allStudents():[];
+  const name=prompt('学生姓名（留空表示家庭费用）',''); if(name===null)return;
+  const student=ss.find(x=>x.name===name.trim());
+  if(name.trim()&&!student)return alert('未找到该学生，请先建立学生档案。');
+  const category=prompt('费用类别：补习 / 活动 / 接送 / 其他','补习');if(!category)return;
+  const description=prompt('费用说明','');if(!description)return;
+  const amount=Number(prompt('金额（新加坡元）','0'));if(!amount||amount<0)return;
+  const date=prompt('费用日期（YYYY-MM-DD）',new Date().toISOString().slice(0,10));if(!date)return;
+  const status=prompt('状态：已支付 / 待支付 / 已取消','待支付')||'待支付';
+  const id='payment_'+(crypto.randomUUID?crypto.randomUUID():Date.now());
+  r.payments=Array.isArray(r.payments)?r.payments:[];
+  r.payments.push({id,studentId:student?.id||'',academicYearId:student?feeAcademicYear(student.id,date):'',category,description,amount,date,status});
+  saveEducationRelations(r);renderFees();alert('费用记录已保存。');
+}
+document.querySelectorAll('#feeChild button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#feeChild button').forEach(x=>x.classList.remove('on'));b.classList.add('on');fc=b.dataset.c;renderFees()}));
+document.getElementById('addFeeBtn')?.addEventListener('click',addFeeRecord);
+renderFees();
 
 const X=document.getElementById('extraPage');
 const cd=a=>'<div class="cards">'+a.map(c=>'<div class="card"><span class="label">'+c[0]+'</span><div class="metric">'+c[1]+'</div><span class="label">'+c[2]+'</span></div>').join('')+'</div>';
@@ -608,9 +691,9 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
       return Object.assign({
         teachers:[],courses:[],packages:[],lessons:[],
         drivers:[],vehicles:[],transportTasks:[],temporaryArrangements:[],conflicts:[],
-        tasks:[],affairs:[],assessments:[],academicGoals:[],progressRecords:[],feedbacks:[]
+        tasks:[],affairs:[],assessments:[],academicGoals:[],progressRecords:[],feedbacks:[],payments:[]
       },raw);
-    }catch(e){return {teachers:[],courses:[],packages:[],lessons:[],drivers:[],vehicles:[],transportTasks:[],temporaryArrangements:[],conflicts:[],tasks:[],affairs:[],assessments:[],academicGoals:[],progressRecords:[],feedbacks:[]};}
+    }catch(e){return {teachers:[],courses:[],packages:[],lessons:[],drivers:[],vehicles:[],transportTasks:[],temporaryArrangements:[],conflicts:[],tasks:[],affairs:[],assessments:[],academicGoals:[],progressRecords:[],feedbacks:[],payments:[]};}
   }
   function saveEducationRelations(data){localStorage.setItem(EDUCATION_RELATION_KEY,JSON.stringify(data));}
   let relations=loadEducationRelations();
