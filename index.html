@@ -274,7 +274,7 @@
 <label>学段<select id="studentStage" name="stage"><option value="Primary">小学</option><option value="Secondary">中学</option><option value="JC">初级学院</option></select></label>
 <label>年级<select id="studentGrade" name="grade"></select></label>
 <label>学习路径<select id="studentPath" name="path"></select></label>
-<label>当前主要科目<input name="subjects" placeholder="例如：英语、数学、科学"></label>
+<div><label>当前主要科目</label><div id="studentSubjects" style="margin-top:7px;display:grid;grid-template-columns:1fr 1fr;gap:8px"></div><div id="studentSubjectsNote" class="label" style="margin-top:7px">请按学生实际修读科目勾选，可多选。</div></div>
 </div>
 <div id="studentPathNote" class="label" style="margin-top:10px"></div>
 <h3 style="margin:24px 0 14px">三、教育目标</h3>
@@ -284,12 +284,13 @@
 <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:22px"><button type="button" id="studentCancel" class="link">取消</button><button type="submit" class="primary">建立学生档案</button></div>
 </form></div></div><script>
 (function(){
- const modal=document.getElementById('studentModal'),btn=document.getElementById('addStudentBtn'),close=document.getElementById('studentClose'),cancel=document.getElementById('studentCancel'),form=document.getElementById('studentForm'),stage=document.getElementById('studentStage'),grade=document.getElementById('studentGrade'),path=document.getElementById('studentPath'),note=document.getElementById('studentPathNote'),cards=document.getElementById('studentCards');
+ const modal=document.getElementById('studentModal'),btn=document.getElementById('addStudentBtn'),close=document.getElementById('studentClose'),cancel=document.getElementById('studentCancel'),form=document.getElementById('studentForm'),stage=document.getElementById('studentStage'),grade=document.getElementById('studentGrade'),path=document.getElementById('studentPath'),note=document.getElementById('studentPathNote'),cards=document.getElementById('studentCards'),subjectsBox=document.getElementById('studentSubjects'),subjectsNote=document.getElementById('studentSubjectsNote');
  if(!modal||!btn||!form)return;
  const options={Primary:{grades:['Primary 1','Primary 2','Primary 3','Primary 4','Primary 5','Primary 6'],paths:['小学普通课程']},Secondary:{grades:['Secondary 1','Secondary 2','Secondary 3','Secondary 4'],paths:['IP','Mainstream PG 3','Mainstream PG 2','Mainstream PG 1']},JC:{grades:['JC 1','JC 2'],paths:['JC']}};
  const esc=v=>String(v||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
  function read(){try{return JSON.parse(localStorage.getItem('educationOS_students')||'[]')}catch(e){return[]}}
- function refresh(){const d=options[stage.value];grade.innerHTML=d.grades.map(x=>'<option>'+x+'</option>').join('');path.innerHTML=d.paths.map(x=>'<option>'+x+'</option>').join('');note.textContent=stage.value==='Secondary'?'中学路径按学生实际 Programme 记录；Mainstream 可选择 PG 3、PG 2、PG 1。':stage.value==='Primary'?'小学按 Primary 1–6 记录。':stage.value==='JC'?'初级学院按 JC 1–2 记录。':'中学按 S1–S4 记录。'}
+ const subjectOptions={Primary:['英语','数学','科学','中文','马来文','泰米尔文','美术','音乐','体育','品格与公民教育'],Secondary:['英语','数学','Additional Mathematics','科学','Biology','Chemistry','Physics','Combined Science','中文','Higher Chinese','马来文','Higher Malay','泰米尔文','Higher Tamil','Social Studies','Geography','History','Literature in English','Combined Humanities','Art','Design & Technology','Music','Computing','Principles of Accounts'],JC:['General Paper','Project Work','母语','中文','马来文','泰米尔文','English Language & Linguistics','Mathematics','Further Mathematics','Biology','Chemistry','Physics','Computing','Economics','Geography','History','Literature in English','China Studies','Art','Music','Theatre Studies & Drama','Principles of Accounting','Management of Business']};
+ function refresh(){const d=options[stage.value];grade.innerHTML=d.grades.map(x=>'<option>'+x+'</option>').join('');path.innerHTML=d.paths.map(x=>'<option>'+x+'</option>').join('');note.textContent=stage.value==='Secondary'?'中学路径按学生实际 Programme 记录；Mainstream 可选择 PG 3、PG 2、PG 1。':stage.value==='Primary'?'小学按 Primary 1–6 记录。':stage.value==='JC'?'初级学院按 JC 1–2 记录。':'中学按 S1–S4 记录。';if(subjectsBox){const current=String(form.elements.subjects?.value||'').split(/[·,，、]/).map(x=>x.trim()).filter(Boolean);const gradeNo=Number((grade.value.match(/\d+/)||['1'])[0]);let opts=subjectOptions[stage.value]||[];if(stage.value==='Primary'&&gradeNo<3)opts=opts.filter(x=>x!=='科学');subjectsBox.innerHTML=opts.map(x=>'<label style="display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);cursor:pointer"><input type="checkbox" name="subjectChoice" value="'+esc(x)+'" '+(current.includes(x)?'checked':'')+'><span>'+esc(x)+'</span></label>').join('');subjectsNote.textContent=stage.value==='Primary'?'请选择学生实际修读的主要科目；P3–P6可选择科学。':stage.value==='Secondary'?'请选择学生实际修读科目；G1 / G2 / G3 将在科目档案中记录。':'请选择学校实际提供并由学生修读的科目；H1 / H2 / H3 将在科目档案中记录。';}}
  function render(){
    if(!cards)return;
    const list=read();
@@ -309,8 +310,8 @@
  }
  function open(){refresh();modal.style.display='block';document.body.style.overflow='hidden'}
  function hide(){modal.style.display='none';document.body.style.overflow=''}
- stage.addEventListener('change',refresh);btn.addEventListener('click',open);close.addEventListener('click',hide);cancel.addEventListener('click',hide);modal.addEventListener('click',e=>{if(e.target===modal)hide()});
- form.addEventListener('submit',e=>{e.preventDefault();const d=Object.fromEntries(new FormData(form).entries());d.id='student_'+Date.now();d.createdAt=new Date().toISOString();const list=read();list.push(d);localStorage.setItem('educationOS_students',JSON.stringify(list));render();hide();form.reset();refresh();alert('学生档案已建立，并已显示在学生档案中。')});
+ stage.addEventListener('change',refresh);grade.addEventListener('change',refresh);btn.addEventListener('click',open);close.addEventListener('click',hide);cancel.addEventListener('click',hide);modal.addEventListener('click',e=>{if(e.target===modal)hide()});
+ form.addEventListener('submit',e=>{e.preventDefault();const d=Object.fromEntries(new FormData(form).entries());d.subjects=[...form.querySelectorAll('input[name="subjectChoice"]:checked')].map(x=>x.value).join(' · ');delete d.subjectChoice;d.id='student_'+Date.now();d.createdAt=new Date().toISOString();const list=read();list.push(d);localStorage.setItem('educationOS_students',JSON.stringify(list));render();hide();form.reset();refresh();alert('学生档案已建立，并已显示在学生档案中。')});
  refresh();render();
  window.renderEducationStudents=render;
  function getStudentById(id){
