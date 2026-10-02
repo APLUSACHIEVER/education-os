@@ -39,7 +39,71 @@
 </aside>
 <main class="main"><div class="content">
   <header class="top"><div class="welcome"><h1 id="pageTitle">家庭首页</h1><p id="pageSub">家庭教育管理中心</p></div><div class="profile"><div><b id="topFamilyName">家庭</b><small id="topStudentCount" style="display:block;color:var(--muted);text-align:right">0 位学生</small></div><div class="avatar">家</div></div></header>
-  <div id="educationPage" style="display:none"><section class="section"><div class="section-head"><h2>教育管理</h2><button class="link">＋ 新增课程</button></div><div class="cards"><div class="card"><span class="label">当前课程</span><div class="metric">0</div></div><div class="card"><span class="label">老师</span><div class="metric">0</div></div><div class="card"><span class="label">课时包</span><div class="metric">0</div></div><div class="card"><span class="label">待反馈</span><div class="metric">0</div></div></div></section><section class="section"><div class="card"><span class="label">暂无课程记录。</span></div></section></div><div id="academicPage" style="display:none"></div><div id="transportPage" style="display:none"></div><div id="familySchedule" style="display:none">
+  
+<div id="educationPage" style="display:none">
+  <section class="section" style="margin-top:0">
+    <div class="section-head">
+      <div><h2>教育管理</h2><span class="label">统一管理课程、老师、课时包、教育活动与教师反馈。</span></div>
+      <button class="primary" id="eduAddCourse">＋ 新增课程</button>
+    </div>
+    <div class="tabs" id="eduTabs">
+      <button class="on" data-tab="courses">课程</button>
+      <button data-tab="teachers">老师</button>
+      <button data-tab="packages">课时包</button>
+      <button data-tab="activities">教育活动</button>
+      <button data-tab="settings">设置</button>
+    </div>
+  </section>
+
+  <section id="eduCoursesPanel">
+    <section class="cards">
+      <div class="card"><span class="label">当前课程</span><div class="metric" id="eduCourseCount">0</div><span class="label">进行中 / 已安排</span></div>
+      <div class="card"><span class="label">老师</span><div class="metric" id="eduTeacherCount">0</div><span class="label">已建立档案</span></div>
+      <div class="card"><span class="label">课时包</span><div class="metric" id="eduPackageCount">0</div><span class="label">有效课时包</span></div>
+      <div class="card"><span class="label">待反馈</span><div class="metric" id="eduFeedbackCount">0</div><span class="label">需要跟进</span></div>
+    </section>
+    <section class="section">
+      <div class="section-head"><h2>课程列表</h2><span class="label">课程建立后可连接学生、学年、科目、老师与课时包</span></div>
+      <div class="card">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+          <select id="eduCourseChildFilter" style="padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text)"><option value="">全部学生</option></select>
+          <select id="eduCourseStatusFilter" style="padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text)"><option value="">全部状态</option><option>进行中</option><option>已安排</option><option>暂停</option><option>已结束</option></select>
+          <input id="eduCourseSearch" placeholder="搜索课程、科目或老师" style="padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text)">
+        </div>
+        <div id="eduCourseList"></div>
+      </div>
+    </section>
+  </section>
+
+  <section id="eduTeachersPanel" style="display:none">
+    <section class="section" style="margin-top:0"><div class="section-head"><h2>老师</h2><button class="primary" id="eduAddTeacher">＋ 新增老师</button></div><div class="card"><div id="eduTeacherList"></div></div></section>
+  </section>
+
+  <section id="eduPackagesPanel" style="display:none">
+    <section class="section" style="margin-top:0"><div class="section-head"><h2>课时包</h2><button class="primary" id="eduAddPackage">＋ 新增课时包</button></div><div class="card"><div id="eduPackageList"></div></div></section>
+  </section>
+
+  <section id="eduActivitiesPanel" style="display:none">
+    <section class="section" style="margin-top:0"><div class="section-head"><h2>教育活动</h2><button class="primary" id="eduAddActivity">＋ 新增教育活动</button></div><div class="card"><div id="eduActivityList"></div></div></section>
+  </section>
+
+  <section id="eduSettingsPanel" style="display:none">
+    <section class="section" style="margin-top:0"><div class="section-head"><h2>教育管理设置</h2><span class="pill">统一规则</span></div></section>
+    <section class="section"><div class="two">
+      <div class="card"><h3 style="margin-top:0">课程类型</h3><div id="eduTypeList"></div><button class="link" id="eduAddType">＋ 新增课程类型</button></div>
+      <div class="card"><h3 style="margin-top:0">上课方式</h3><div id="eduModeList"></div><button class="link" id="eduAddMode">＋ 新增上课方式</button></div>
+    </div></section>
+    <section class="section"><div class="two">
+      <div class="card"><h3 style="margin-top:0">课程状态</h3><div id="eduStatusList"></div></div>
+      <div class="card"><h3 style="margin-top:0">课时包规则</h3>
+        <div class="finance-row"><span>扣课方式</span><b>按实际完成课时扣减</b></div>
+        <div class="finance-row"><span>取消课程</span><b>不自动扣减</b></div>
+        <div class="finance-row"><span>低余额提醒</span><b>剩余低于 4 小时</b></div>
+      </div>
+    </div></section>
+    <section class="section"><div class="card"><h3 style="margin-top:0">科目与年级</h3><div class="label">平台统一使用「学科设置」中的 MOE 学科 Master；学生实际修读科目按「学生 → 学年」保存。不会在这里重复建立另一套科目数据库。</div><div style="margin-top:12px"><button class="link" id="eduOpenSubjectSettings">→ 打开学科设置</button></div></div></section>
+  </section>
+</div><div id="academicPage" style="display:none"></div><div id="transportPage" style="display:none"></div><div id="familySchedule" style="display:none">
   <section class="cards">
     <div class="card"><span class="label">📅 今日课程</span><div class="metric" id="fsLessons">0</div><span class="label">来自课程记录</span></div>
     <div class="card"><span class="label">🚗 今日接送</span><div class="metric" id="fsTransport">0</div><span class="label">来自接送管理</span></div>
@@ -866,4 +930,186 @@
   function init(){ensureStore();renderManagementPages();renderDashboard();renderFamilySchedule();renderEducation();renderAcademic();renderTransport();observe()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
-</script></body></html>
+</script>
+<script>
+/* 教育管理：课程 / 老师 / 课时包 / 教育活动 / 设置。数据统一写入 educationOS_relations。 */
+(function(){
+  const KEY='educationOS_relations';
+  const defaults={
+    teachers:[],courses:[],packages:[],activities:[],feedbacks:[],lessons:[],
+    drivers:[],vehicles:[],transportTasks:[],temporaryArrangements:[],conflicts:[],
+    tasks:[],affairs:[],assessments:[],academicGoals:[],progressRecords:[],payments:[]
+  };
+  const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  function load(){try{return Object.assign({},defaults,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){return Object.assign({},defaults)}}
+  function save(d){localStorage.setItem(KEY,JSON.stringify(d));}
+  function students(){try{return JSON.parse(localStorage.getItem('educationOS_students')||'[]')}catch(e){return[]}}
+  function id(p){return p+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)}
+  function promptText(label,value){const v=prompt(label,value||'');return v===null?null:v.trim()}
+  function init(){
+    const page=document.getElementById('educationPage'); if(!page)return;
+    const rel=load();
+    if(!Array.isArray(rel.teachers))rel.teachers=[];
+    if(!Array.isArray(rel.courses))rel.courses=[];
+    if(!Array.isArray(rel.packages))rel.packages=[];
+    if(!Array.isArray(rel.activities))rel.activities=[];
+    save(rel);
+
+    const tabs=document.querySelectorAll('#eduTabs button');
+    const panels={courses:'eduCoursesPanel',teachers:'eduTeachersPanel',packages:'eduPackagesPanel',activities:'eduActivitiesPanel',settings:'eduSettingsPanel'};
+    tabs.forEach(b=>b.onclick=()=>{
+      tabs.forEach(x=>x.classList.remove('on'));b.classList.add('on');
+      Object.values(panels).forEach(x=>document.getElementById(x).style.display='none');
+      document.getElementById(panels[b.dataset.tab]).style.display='block';
+      render();
+    });
+
+    function render(){
+      const d=load(), ss=students();
+      const activeCourses=d.courses.filter(x=>x.status==='进行中'||x.status==='已安排');
+      document.getElementById('eduCourseCount').textContent=activeCourses.length;
+      document.getElementById('eduTeacherCount').textContent=d.teachers.length;
+      document.getElementById('eduPackageCount').textContent=d.packages.filter(x=>x.status!=='已结束').length;
+      document.getElementById('eduFeedbackCount').textContent=(d.feedbacks||[]).filter(x=>x.status!=='已处理').length;
+      const cf=document.getElementById('eduCourseChildFilter');
+      const old=cf.value;
+      cf.innerHTML='<option value="">全部学生</option>'+ss.map(s=>'<option value="'+esc(s.id)+'">'+esc(s.name)+'</option>').join('');
+      cf.value=old;
+      renderCourses();renderTeachers();renderPackages();renderActivities();renderSettings();
+    }
+    function renderCourses(){
+      const d=load(),ss=students(),child=document.getElementById('eduCourseChildFilter').value,status=document.getElementById('eduCourseStatusFilter').value,q=document.getElementById('eduCourseSearch').value.trim().toLowerCase();
+      const list=d.courses.filter(c=>{
+        const s=ss.find(x=>String(x.id)===String(c.studentId));
+        const t=d.teachers.find(x=>String(x.id)===String(c.teacherId));
+        const text=[c.name,c.subject,c.type,c.mode,s?.name,t?.name].join(' ').toLowerCase();
+        return (!child||String(c.studentId)===String(child))&&(!status||c.status===status)&&(!q||text.includes(q));
+      });
+      const box=document.getElementById('eduCourseList');
+      if(!list.length){box.innerHTML='<div class="label" style="padding:18px 0">暂无符合条件的课程。点击「＋ 新增课程」建立第一门课程。</div>';return;}
+      box.innerHTML=list.map(c=>{
+        const s=ss.find(x=>String(x.id)===String(c.studentId)),t=d.teachers.find(x=>String(x.id)===String(c.teacherId)),p=d.packages.find(x=>String(x.id)===String(c.packageId));
+        return '<div class="event"><div class="time">'+esc(c.schedule||'待安排')+'</div><div><strong>'+esc(s?.name||'学生未设置')+' · '+esc(c.subject||'未设置科目')+' · '+esc(c.name||'未命名课程')+'</strong><small>'+esc(t?.name||'老师未设置')+' · '+esc(c.mode||'上课方式未设置')+' · '+esc(p?.name||'未绑定课时包')+'</small></div><span class="pill">'+esc(c.status||'已安排')+'</span><div style="grid-column:2/-1;display:flex;gap:10px"><button class="link" data-edit-course="'+esc(c.id)+'">编辑</button><button class="link" data-delete-course="'+esc(c.id)+'">删除</button></div></div>';
+      }).join('');
+    }
+    function renderTeachers(){
+      const d=load(),box=document.getElementById('eduTeacherList');
+      if(!d.teachers.length){box.innerHTML='<span class="label">暂无老师档案。</span>';return;}
+      box.innerHTML=d.teachers.map(t=>'<div class="finance-row"><span><b>'+esc(t.name)+'</b><br><span class="label">'+esc(t.subject||'未设置科目')+' · '+esc(t.mode||'未设置上课方式')+'</span></span><span><button class="link" data-edit-teacher="'+esc(t.id)+'">编辑</button> <button class="link" data-delete-teacher="'+esc(t.id)+'">删除</button></span></div>').join('');
+    }
+    function renderPackages(){
+      const d=load(),box=document.getElementById('eduPackageList');
+      if(!d.packages.length){box.innerHTML='<span class="label">暂无课时包。</span>';return;}
+      box.innerHTML=d.packages.map(p=>{
+        const remain=Math.max(0,Number(p.totalHours||0)-Number(p.usedHours||0));
+        return '<div class="finance-row"><span><b>'+esc(p.name)+'</b><br><span class="label">'+esc(p.studentName||'未设置学生')+' · '+esc(p.subject||'未设置科目')+'</span></span><span><b>'+remain+' / '+Number(p.totalHours||0)+' 小时</b><br><button class="link" data-edit-package="'+esc(p.id)+'">编辑</button> <button class="link" data-delete-package="'+esc(p.id)+'">删除</button></span></div>';
+      }).join('');
+    }
+    function renderActivities(){
+      const d=load(),box=document.getElementById('eduActivityList');
+      if(!d.activities.length){box.innerHTML='<span class="label">暂无教育活动。</span>';return;}
+      box.innerHTML=d.activities.map(a=>'<div class="finance-row"><span><b>'+esc(a.name)+'</b><br><span class="label">'+esc(a.studentName||'未设置学生')+' · '+esc(a.date||'未设置日期')+'</span></span><span>'+esc(a.status||'已安排')+' <button class="link" data-delete-activity="'+esc(a.id)+'">删除</button></span></div>').join('');
+    }
+    function renderSettings(){
+      const types=load().settings?.types||['补习课程','一对一课程','小班课程','在线学习','课外活动'];
+      const modes=load().settings?.modes||['线上','到府','学习中心 / 教室','学校场地'];
+      document.getElementById('eduTypeList').innerHTML=types.map(x=>'<div class="finance-row"><span>'+esc(x)+'</span><span class="label">课程类型</span></div>').join('');
+      document.getElementById('eduModeList').innerHTML=modes.map(x=>'<div class="finance-row"><span>'+esc(x)+'</span><span class="label">上课方式</span></div>').join('');
+      document.getElementById('eduStatusList').innerHTML=['已安排','进行中','暂停','已结束'].map(x=>'<div class="finance-row"><span>'+x+'</span><span class="pill">可用</span></div>').join('');
+    }
+    function studentPrompt(){
+      const ss=students();if(!ss.length){alert('请先建立学生档案，再新增课程。');return null;}
+      const text=ss.map((s,i)=>(i+1)+'. '+s.name+' · '+(s.grade||'未设置年级')).join('\n');
+      const n=Number(prompt('请选择学生编号：\n'+text,'1'));if(!n||!ss[n-1])return null;return ss[n-1];
+    }
+    function teacherPrompt(d){
+      if(!d.teachers.length)return null;
+      const text=d.teachers.map((t,i)=>(i+1)+'. '+t.name+' · '+(t.subject||'')).join('\n');
+      const n=Number(prompt('请选择老师编号：\n'+text,'1'));return d.teachers[n-1]||null;
+    }
+    function packagePrompt(d,s){
+      const list=d.packages.filter(p=>!p.studentId||String(p.studentId)===String(s?.id));
+      if(!list.length)return null;
+      const text=list.map((p,i)=>(i+1)+'. '+p.name+' · 剩余 '+Math.max(0,Number(p.totalHours||0)-Number(p.usedHours||0))+' 小时').join('\n');
+      const n=Number(prompt('请选择课时包编号：\n'+text,'1'));return list[n-1]||null;
+    }
+    function addCourse(){
+      const s=studentPrompt();if(!s)return;
+      const d=load(), subject=promptText('科目',s.subjects?s.subjects.split(' · ')[0]:'英语');if(subject===null)return;
+      const name=promptText('课程名称',subject+'课程');if(name===null||!name)return;
+      const type=promptText('课程类型','补习课程');if(type===null)return;
+      const t=teacherPrompt(d), mode=promptText('上课方式','线上');if(mode===null)return;
+      const schedule=promptText('上课安排','每周一次');if(schedule===null)return;
+      const start=promptText('开始日期','2026-10-03');if(start===null)return;
+      const duration=Number(prompt('每节课时长（小时）','1'));if(!duration||duration<=0)return;
+      const p=packagePrompt(d,s);
+      d.courses.push({id:id('course'),studentId:s.id,subject,name,type,teacherId:t?.id||'',mode,schedule,start,duration,packageId:p?.id||'',status:'已安排',createdAt:new Date().toISOString()});
+      save(d);render();alert('课程已建立。');
+    }
+    function addTeacher(){
+      const name=promptText('老师姓名','');if(name===null||!name)return;
+      const subject=promptText('主要科目','');if(subject===null)return;
+      const mode=promptText('上课方式','线上');if(mode===null)return;
+      const d=load();d.teachers.push({id:id('teacher'),name,subject,mode,status:'正常'});save(d);render();
+    }
+    function addPackage(){
+      const s=studentPrompt();if(!s)return;
+      const name=promptText('课时包名称',s.name+' · 课时包');if(name===null||!name)return;
+      const subject=promptText('科目','英语');if(subject===null)return;
+      const total=Number(prompt('总课时（小时）','10'));if(!total||total<=0)return;
+      const d=load();d.packages.push({id:id('package'),name,studentId:s.id,studentName:s.name,subject,totalHours:total,usedHours:0,status:'有效'});save(d);render();
+    }
+    function addActivity(){
+      const s=studentPrompt();if(!s)return;
+      const name=promptText('活动名称','');if(name===null||!name)return;
+      const date=promptText('活动日期','2026-10-05');if(date===null)return;
+      const d=load();d.activities.push({id:id('activity'),name,studentId:s.id,studentName:s.name,date,status:'已安排'});save(d);render();
+    }
+    function editCourse(cid){
+      const d=load(),c=d.courses.find(x=>x.id===cid);if(!c)return;
+      const name=promptText('课程名称',c.name);if(name===null)return;
+      const schedule=promptText('上课安排',c.schedule);if(schedule===null)return;
+      const status=promptText('课程状态',c.status);if(status===null)return;
+      c.name=name;c.schedule=schedule;c.status=status;save(d);render();
+    }
+    function editTeacher(tid){
+      const d=load(),t=d.teachers.find(x=>x.id===tid);if(!t)return;
+      const name=promptText('老师姓名',t.name);if(name===null)return;
+      const subject=promptText('主要科目',t.subject);if(subject===null)return;
+      t.name=name;t.subject=subject;save(d);render();
+    }
+    function editPackage(pid){
+      const d=load(),p=d.packages.find(x=>x.id===pid);if(!p)return;
+      const total=Number(prompt('总课时（小时）',p.totalHours));if(!total||total<=0)return;
+      p.totalHours=total;save(d);render();
+    }
+    document.getElementById('eduAddCourse').onclick=addCourse;
+    document.getElementById('eduAddTeacher').onclick=addTeacher;
+    document.getElementById('eduAddPackage').onclick=addPackage;
+    document.getElementById('eduAddActivity').onclick=addActivity;
+    document.getElementById('eduCourseChildFilter').onchange=renderCourses;
+    document.getElementById('eduCourseStatusFilter').onchange=renderCourses;
+    document.getElementById('eduCourseSearch').oninput=renderCourses;
+    document.getElementById('eduAddType').onclick=()=>{
+      const v=promptText('新的课程类型','');if(v===null||!v)return;const d=load();d.settings=d.settings||{};d.settings.types=d.settings.types||['补习课程','一对一课程','小班课程','在线学习','课外活动'];if(!d.settings.types.includes(v))d.settings.types.push(v);save(d);render();
+    };
+    document.getElementById('eduAddMode').onclick=()=>{
+      const v=promptText('新的上课方式','');if(v===null||!v)return;const d=load();d.settings=d.settings||{};d.settings.modes=d.settings.modes||['线上','到府','学习中心 / 教室','学校场地'];if(!d.settings.modes.includes(v))d.settings.modes.push(v);save(d);render();
+    };
+    document.getElementById('eduOpenSubjectSettings').onclick=()=>document.querySelector('.nav button[data-page="学科设置"]')?.click();
+    document.addEventListener('click',e=>{
+      const ec=e.target.closest('[data-edit-course]');if(ec)editCourse(ec.dataset.editCourse);
+      const dc=e.target.closest('[data-delete-course]');if(dc){const d=load();d.courses=d.courses.filter(x=>x.id!==dc.dataset.deleteCourse);save(d);render();}
+      const et=e.target.closest('[data-edit-teacher]');if(et)editTeacher(et.dataset.editTeacher);
+      const dt=e.target.closest('[data-delete-teacher]');if(dt){const d=load();d.teachers=d.teachers.filter(x=>x.id!==dt.dataset.deleteTeacher);save(d);render();}
+      const ep=e.target.closest('[data-edit-package]');if(ep)editPackage(ep.dataset.editPackage);
+      const dp=e.target.closest('[data-delete-package]');if(dp){const d=load();d.packages=d.packages.filter(x=>x.id!==dp.dataset.deletePackage);save(d);render();}
+      const da=e.target.closest('[data-delete-activity]');if(da){const d=load();d.activities=d.activities.filter(x=>x.id!==da.dataset.deleteActivity);save(d);render();}
+    });
+    window.renderEducationPage=render;
+    render();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+</body></html>
