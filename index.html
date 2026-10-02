@@ -236,6 +236,7 @@
       <div style="margin-top:14px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface2)"><div style="display:flex;justify-content:space-between;align-items:center"><div><b>升学转换</b><div class="label" style="margin-top:5px">Primary 6 → Secondary 1</div></div><span class="pill">学校可更换</span></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px"><div><span class="label">当前学校</span><div style="margin-top:5px">小学 · 当前学校</div></div><div><span class="label">目标学校</span><div style="margin-top:5px">可新增多所候选学校</div></div><div><span class="label">申请年份</span><div style="margin-top:5px">2027 DSA-Sec / Sec 1</div></div><div><span class="label">DSA 选择</span><div style="margin-top:5px">学校 + Talent Area</div></div><div><span class="label">录取结果</span><div style="margin-top:5px">待确认</div></div><div><span class="label">最终学校</span><div style="margin-top:5px">待确认 · 建立 2028 学年</div></div></div></div>
     </div>
   </section>
+  <div id="planningPage" style="display:none"><section class="section" style="margin-top:0"><div class="section-head"><div><h2>学校 / DSA规划</h2><span class="label">按学生与学年记录升学路径，不建立学校 Master</span></div><button class="link" id="addPlanningBtn">＋ 新增升学规划</button></div><div class="card"><div class="label">设计原则</div><div style="margin-top:8px;line-height:1.8">P6 → S1 建立新的学年档案；小学历史资料保留。学校为学生学年记录中的自由文本。DSA 目标、申请进度、结果与最终学校分别记录。</div></div><div class="grid" id="planningCards"></div></section></div>
   <div id="feesPage" style="display:none">
 <section class="section" style="margin-top:0"><div class="section-head"><h2>💰 家庭费用</h2><div class="tabs" id="feeChild"><button class="on" data-c="all">全家</button><button data-c="Jason">Jason</button><button data-c="Amy">Amy</button></div></div>
 <div class="cards"><div class="card"><span class="label">本月合计</span><div class="metric" id="fTotal"></div><span class="label">2026 年 10 月</span></div><div class="card"><span class="label">📚 补习</span><div class="metric" id="fTuition"></div><span class="label" id="fTuitionN"></span></div><div class="card"><span class="label">🎨 活动</span><div class="metric" id="fAct"></div><span class="label" id="fActN"></span></div><div class="card"><span class="label">🚗 接送</span><div class="metric" id="fTrans"></div><span class="label">司机 / 车辆费用</span></div></div></section>
@@ -408,15 +409,15 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
     const map={
       '首页':'dashboard','客户 / 家庭档案':'familyPage','学生完整档案':'childProfile',
       '家庭日程':'familySchedule','接送管理':'transportPage','教育管理':'educationPage',
-      '学业管理':'academicPage','学科设置':'subjectSettingsPage','学校 / DSA规划':'dsaPlanning','家庭费用':'feesPage','家庭事务':'familyAffairsPage','任务':'tasksPage','待处理':'pendingPage','家庭报告':'familyReportPage'
+      '学业管理':'academicPage','学科设置':'subjectSettingsPage','学校 / DSA规划':'planningPage','家庭费用':'feesPage','家庭事务':'familyAffairsPage','任务':'tasksPage','待处理':'pendingPage','家庭报告':'familyReportPage'
     };
-    const ids=['dashboard','familyPage','childProfile','studentDetailPage','dsaPlanning','familySchedule','transportPage','educationPage','academicPage','feesPage','moeSubjectExplorer','subjectSettingsPage','familyAffairsPage','tasksPage','pendingPage','familyReportPage','placeholder'];
+    const ids=['dashboard','familyPage','childProfile','studentDetailPage','dsaPlanning','familySchedule','transportPage','educationPage','academicPage','feesPage','moeSubjectExplorer','subjectSettingsPage','familyAffairsPage','tasksPage','pendingPage','familyReportPage','planningPage','placeholder'];
     const title=document.getElementById('pageTitle'),sub=document.getElementById('pageSub');
     document.querySelectorAll('.nav button').forEach(function(btn){
       btn.addEventListener('click',function(){
         const p=btn.getAttribute('data-page');
         ids.forEach(function(id){const el=document.getElementById(id);if(el)el.style.display='none';});
-        if(p==='客户 / 家庭档案'&&window.renderEducationStudents)window.renderEducationStudents(); if(p==='家庭日程')renderFamilyScheduleFromLessons();
+        if(p==='客户 / 家庭档案'&&window.renderEducationStudents)window.renderEducationStudents(); if(p==='家庭日程')renderFamilyScheduleFromLessons(); if(p==='学校 / DSA规划')renderPlanning();
         const target=document.getElementById(map[p]||'placeholder');
         if(target)target.style.display='block';
         if(p==='学业管理'){const m=document.getElementById('moeSubjectExplorer');if(m)m.style.display='block';}
@@ -779,10 +780,18 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
   const allStudents=()=>students().concat([{id:'legacy_jason',name:'Jason'},{id:'legacy_amy',name:'Amy'}]).filter((s,i,a)=>a.findIndex(x=>String(x.id)===String(s.id))===i);
   const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
   function ensureStore(){
-    const r=rel();['drivers','vehicles','transportTasks','temporaryArrangements','conflicts','tasks','affairs'].forEach(k=>{if(!Array.isArray(r[k]))r[k]=[]});
+    const r=rel();['drivers','vehicles','transportTasks','temporaryArrangements','conflicts','tasks','affairs','planning'].forEach(k=>{if(!Array.isArray(r[k]))r[k]=[]});
     save(REL,r);return r;
   }
   function page(id,title,sub,body){const p=document.getElementById(id);if(!p)return;p.innerHTML='<section class="section" style="margin-top:0"><div class="section-head"><div><h2>'+title+'</h2><span class="label">'+sub+'</span></div></div>'+body+'</section>'}
+  function renderPlanning(){
+    const p=document.getElementById('planningPage');if(!p)return;
+    const r=ensureStore(),ss=allStudents(),cards=document.getElementById('planningCards');if(!cards)return;
+    const plans=r.planning||[];
+    cards.innerHTML=ss.map(s=>{const sp=plans.filter(x=>String(x.studentId)===String(s.id));return '<div class="card"><div class="section-head"><div><h2>'+esc(s.name)+'</h2><span class="label">学生独立升学规划</span></div><span class="pill">'+sp.length+' 项规划</span></div>'+(sp.length?sp.map(x=>'<div class="item"><strong>'+esc(x.academicYear||'')+' · '+esc(x.stage||'')+'</strong><small>目标学校：'+esc(x.targetSchool||'未设置')+' · DSA：'+esc(x.dsaArea||'未设置')+'</small><small>申请状态：'+esc(x.status||'规划中')+' · 结果：'+esc(x.result||'待确认')+'</small><small>最终学校：'+esc(x.finalSchool||'待确认')+'</small><button class="link planning-del" data-id="'+esc(x.id)+'">删除规划</button></div>').join(''):'<span class="label">暂无升学规划。新增后只属于该学生。</span>')+'</div>'}).join('');
+    cards.querySelectorAll('.planning-del').forEach(b=>b.onclick=()=>{const idx=r.planning.findIndex(x=>String(x.id)===String(b.dataset.id));if(idx>=0){r.planning.splice(idx,1);save(REL,r);renderPlanning();}});
+    document.getElementById('addPlanningBtn')?.addEventListener('click',()=>{if(!ss.length){alert('请先建立学生档案。');return;}const names=ss.map((s,i)=>(i+1)+'. '+s.name).join('\\n');const n=Number(prompt('选择学生编号\\n'+names,'1'))-1;const s=ss[n];if(!s)return;const academicYear=prompt('申请 / 目标学年','2028')||'';const stage=prompt('升学阶段','S1')||'S1';const targetSchool=prompt('目标学校（可填写多个）','')||'';const dsaArea=prompt('DSA Talent Area / 项目（可留空）','')||'';const status=prompt('申请状态','规划中')||'规划中';const result=prompt('录取结果','待确认')||'待确认';const finalSchool=prompt('最终学校','待确认')||'待确认';r.planning.push({id:'planning_'+Date.now(),studentId:String(s.id),academicYear,stage,targetSchool,dsaArea,status,result,finalSchool,createdAt:new Date().toISOString()});save(REL,r);renderPlanning();});
+  }
   function renderManagementPages(){
     const r=ensureStore(), ss=allStudents();
     const taskRows=r.transportTasks||[], drivers=r.drivers||[], vehicles=r.vehicles||[];
