@@ -807,14 +807,21 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
     document.querySelectorAll('.conflict-del').forEach(b=>b.addEventListener('click',()=>{conflicts.splice(+b.dataset.i,1);save(REL,r);renderTransport()}));
   }
   function renderEducation(){
-    const p=document.getElementById('educationPage');if(!p)return;const r=rel(),ls=r.lessons||[],now=new Date().toISOString().slice(0,10);
-    const active=ls.filter(x=>x.status!=='已取消').length, done=ls.filter(x=>x.status==='已完成').length;
-    const teacherMap=Object.fromEntries((r.teachers||[]).map(x=>[x.id,x.name]));
-    const ss=allStudents();
-    p.querySelector('.metric')&&(p.querySelectorAll('.metric')[0].textContent=active);
-    const ms=p.querySelectorAll('.metric');if(ms[1])ms[1].textContent=(r.teachers||[]).length;if(ms[2])ms[2].textContent=(r.packages||[]).length;if(ms[3])ms[3].textContent=Math.max(0,ls.filter(x=>x.status==='已安排'&&x.date<now).length);
+    const p=document.getElementById('educationPage');if(!p)return;
+    const r=rel(),ls=r.lessons||[],ss=allStudents(),teachers=r.teachers||[],courses=r.courses||[],packages=r.packages||[];
+    const active=ls.filter(x=>x.status!=='已取消').length;
+    const ms=p.querySelectorAll('.metric');if(ms[0])ms[0].textContent=active;if(ms[1])ms[1].textContent=teachers.length;if(ms[2])ms[2].textContent=packages.length;if(ms[3])ms[3].textContent=ls.filter(x=>x.status==='已安排').length;
+    const teacherMap=Object.fromEntries(teachers.map(x=>[x.id,x.name]));
     const courseCard=[...p.querySelectorAll('.card')].find(x=>x.querySelector('.section-head h2')?.textContent==='课程');
-    if(courseCard){const holder=courseCard.querySelector('.event')?.parentElement||courseCard;const rows=ls.slice().sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).slice(-12);holder.innerHTML=rows.length?rows.map(l=>{const s=ss.find(x=>String(x.id)===String(l.studentId));return '<div class="event"><div class="time">'+esc(l.time||'—')+'</div><div><strong>'+esc(s?.name||'学生')+' · '+esc(l.subjectId||'课程')+'</strong><small>'+esc(teacherMap[l.teacherId]||'老师未设置')+' · '+esc(l.date||'')+' · '+esc(l.duration||'')+' 小时</small></div><span class="pill">'+esc(l.status||'已安排')+'</span></div>'}).join(''):'<span class="label">暂无课程记录。</span>'}
+    if(courseCard){
+      const holder=courseCard.querySelector('.event')?.parentElement||courseCard;
+      const rows=ls.slice().sort((a,b)=>(String(b.date)+String(b.time)).localeCompare(String(a.date)+String(a.time))).slice(0,20);
+      holder.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="link edu-filter active" data-filter="all">全部</button><button class="link edu-filter" data-filter="已安排">已安排</button><button class="link edu-filter" data-filter="已完成">已完成</button><button class="link edu-filter" data-filter="已取消">已取消</button></div><div id="educationCourseRows">'+(rows.length?rows.map(l=>{const s=ss.find(x=>String(x.id)===String(l.studentId));const co=courses.find(x=>String(x.id)===String(l.courseId));return '<div class="event edu-course-row" data-status="'+esc(l.status||'已安排')+'"><div class="time">'+esc(l.date||'')+'<br>'+esc(l.time||'—')+'</div><div><strong>'+esc(s?.name||'学生')+' · '+esc(l.subjectId||'课程')+'</strong><small>'+esc(co?.name||'课程未设置')+' · '+esc(teacherMap[l.teacherId]||'老师未设置')+' · '+esc(l.duration||'')+' 小时</small></div><span class="pill">'+esc(l.status||'已安排')+'</span></div>'}).join(''):'<span class="label">暂无课程记录。</span>')+'</div>';
+      holder.querySelectorAll('.edu-filter').forEach(b=>b.onclick=()=>{holder.querySelectorAll('.edu-filter').forEach(x=>x.classList.remove('active'));b.classList.add('active');holder.querySelectorAll('.edu-course-row').forEach(x=>x.style.display=(b.dataset.filter==='all'||x.dataset.status===b.dataset.filter)?'flex':'none')});
+    }
+    const existing=p.querySelector('#educationDataOverview');if(existing)existing.remove();
+    const sec=document.createElement('section');sec.className='section';sec.id='educationDataOverview';sec.innerHTML='<div class="grid"><div class="card"><div class="section-head"><h2>老师</h2><span class="pill">'+teachers.length+' 位</span></div>'+ (teachers.length?teachers.map(t=>'<div class="event"><div><strong>'+esc(t.name)+'</strong><small>'+esc(t.phone||'')+'</small></div></div>').join(''):'<span class="label">暂无老师档案。老师会在科目档案中建立。</span>')+'</div><div class="card"><div class="section-head"><h2>课时包</h2><span class="pill">'+packages.length+' 个</span></div>'+ (packages.length?packages.map(pa=>'<div class="event"><div><strong>'+esc(pa.name||'课时包')+'</strong><small>'+esc(pa.totalHours||0)+' 小时 · 已使用 '+esc(pa.usedHours||0)+' 小时 · 剩余 '+Math.max(0,Number(pa.totalHours||0)-Number(pa.usedHours||0))+' 小时</small></div></div>').join(''):'<span class="label">暂无课时包。</span>')+'</div></div>';
+    p.appendChild(sec);
   }
   function renderDashboard(){
     const p=document.getElementById('dashboard');if(!p)return;const r=rel(),ls=r.lessons||[],today=new Date().toISOString().slice(0,10),todayLs=ls.filter(x=>x.date===today&&x.status!=='已取消');
