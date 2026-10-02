@@ -329,4 +329,30 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
   syncDisplay();
 })();
 <script>(function(){const m=document.getElementById('studentModal'),open=document.getElementById('addStudentBtn'),close=document.getElementById('closeStudentModal'),cancel=document.getElementById('cancelStudent'),form=document.getElementById('studentForm');if(!m||!open)return;function hide(){m.style.display='none'}open.onclick=()=>m.style.display='block';close.onclick=hide;cancel.onclick=hide;form.onsubmit=e=>{e.preventDefault();const d=Object.fromEntries(new FormData(form).entries());const list=JSON.parse(localStorage.getItem('educationOS_students')||'[]');d.id='student_'+Date.now();list.push(d);localStorage.setItem('educationOS_students',JSON.stringify(list));hide();form.reset();alert('学生档案已建立。下一步可继续完善该学生的学年、科目、课程与接送资料。')};})();</script>\n</script>
-</body></html>
+<script>
+(function(){
+  function initEducationNav(){
+    const map={
+      '首页':'dashboard','客户 / 家庭档案':'familyPage','孩子完整档案':'childProfile',
+      '家庭日程':'familySchedule','接送管理':'transportPage','教育管理':'educationPage',
+      '学业管理':'academicPage','学校 / DSA规划':'dsaPlanning','家庭费用':'feesPage'
+    };
+    const ids=['dashboard','familyPage','childProfile','dsaPlanning','familySchedule','transportPage','educationPage','academicPage','feesPage','moeSubjectExplorer','placeholder'];
+    const title=document.getElementById('pageTitle'),sub=document.getElementById('pageSub');
+    document.querySelectorAll('.nav button').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        const p=btn.getAttribute('data-page');
+        ids.forEach(function(id){const el=document.getElementById(id);if(el)el.style.display='none';});
+        const target=document.getElementById(map[p]||'placeholder');
+        if(target)target.style.display='block';
+        if(p==='学业管理'){const m=document.getElementById('moeSubjectExplorer');if(m)m.style.display='block';}
+        document.querySelectorAll('.nav button').forEach(function(x){x.classList.remove('active');});
+        btn.classList.add('active');
+        if(title)title.textContent=p;
+        if(sub)sub.textContent=p==='客户 / 家庭档案'?'管理家庭资料，并以学生档案作为后续教育管理的核心。':'家庭教育管家的核心管理空间';
+      });
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initEducationNav);else initEducationNav();
+})();
+</script></body></html>
