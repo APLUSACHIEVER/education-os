@@ -476,7 +476,7 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
  function showStudentProfile(id){
    const s=getStudentById(id); if(!s)return;
    const detail=document.getElementById('studentDetailContent');
-   const stageName=s.stage==='Secondary'?'中学':s.stage==='JC'?'初级学院':s.stage==='MI'?'励仁高级中学':'小学';
+   const stageName=s.stage==='Secondary'?'中学':s.stage==='JC'?'初级学院':'小学';
    const years=s.stage==='Primary'
      ? [s.schoolYear+' · '+(s.grade||'当前年级'),(Number(s.schoolYear||2026)+1)+' · 下一学年']
      : [s.schoolYear+' · '+(s.grade||'当前年级')];
@@ -500,7 +500,7 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
  function subjectListForYear(subjectText){const raw=String(subjectText||'').split(/[·,，、]/).map(x=>x.trim()).filter(Boolean);return raw.length?raw:['英语','数学','科学','母语'];}
  function showStudentYearProfile(id,year){
    const s=getStudentById(id);if(!s)return;
-   const stageName=s.stage==='Secondary'?'中学':s.stage==='JC'?'初级学院':s.stage==='MI'?'励仁高级中学':'小学';
+   const stageName=s.stage==='Secondary'?'中学':s.stage==='JC'?'初级学院':'小学';
    const current=String(s.schoolYear||'2026'), y=String(year);
    const yearRecord=Array.isArray(s.academicYears)?s.academicYears.find(r=>String(r.year)===y):null; let d={year:y,grade:yearRecord?.grade||s.grade||'未设置',status:y===current?'当前学年':'历史 / 未来学年',school:yearRecord?.school||s.school||'未填写',path:yearRecord?.path||s.path||'未设置',subjects:yearRecord?.subjects||s.subjects||'尚未设置',goal:yearRecord?.goal||s.goal||'尚未设置',exam:'待建立',dsa:'待规划',progress:'待建立'};
    if((s.name==='Jason'||s.id==='legacy_jason')&&y==='2027')d={year:y,grade:'Primary 6',status:'下一学年',school:s.school||'当前小学',path:'小学普通课程',subjects:'English · Mother Tongue · Mathematics · Science',goal:'PSLE 全面准备',exam:'PSLE',dsa:'2027 DSA-Sec 申请年份',progress:'待建立'};
@@ -564,7 +564,7 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
   function showSubject(id,year,subject){
     const s=currentStudent(id);if(!s)return;
     const p=ensurePage(),box=document.getElementById('studentSubjectProfileContent');
-    const stageName=s.stage==='Secondary'?'中学':s.stage==='JC'?'初级学院':s.stage==='MI'?'励仁高级中学':'小学';
+    const stageName=s.stage==='Secondary'?'中学':s.stage==='JC'?'初级学院':'小学';
     box.innerHTML=
       '<div class="card" style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><h2 style="margin:0">'+escSubject(s.name)+' · '+escSubject(year)+' · '+escSubject(subject)+'</h2><div class="label" style="margin-top:5px">科目档案 · '+escSubject(s.grade||'未设置')+' · '+stageName+'</div></div><button class="link" id="backSubjectYear">← 返回学年档案</button></div></div>'+
       '<section class="section" style="margin-top:0"><div class="section-head"><h2>一、科目基本资料</h2><span class="pill">'+escSubject(year)+' · '+escSubject(subject)+'</span></div><div class="card"><div class="two">'+
