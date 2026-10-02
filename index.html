@@ -1724,4 +1724,160 @@
  setTimeout(()=>{renderPayments();dashboardLinks()},500);
 })();
 </script>
+
+<style id="os-integrated-loop-style">
+.os-live-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.os-live-card{background:var(--surface);border:1px solid var(--border);border-radius:15px;padding:15px;cursor:pointer;transition:.15s}
+.os-live-card:hover,.os-clickable:hover{border-color:var(--green);transform:translateY(-1px)}
+.os-live-card .n{font-size:24px;font-weight:750;margin-top:5px}
+.os-live-card .s{font-size:12px;color:var(--muted)}
+.os-closure{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:17px;margin-top:14px}
+.os-closure-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.os-closure h3{margin:0;font-size:16px}
+.os-clickable{cursor:pointer}
+.os-status{font-size:12px;padding:4px 8px;border-radius:99px;background:var(--green2);color:var(--green)}
+.os-status.warn{background:light-dark(#fff7e9,#392b19);color:var(--amber)}
+.os-status.danger{background:light-dark(#fff0f0,#3a2020);color:var(--red)}
+.os-list-row{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);align-items:center}
+.os-list-row:last-child{border-bottom:0}
+.os-mini{font-size:12px;color:var(--muted)}
+.os-action{background:var(--green2);color:var(--green);padding:6px 10px;border-radius:8px;font-size:12px}
+@media(max-width:900px){.os-live-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:650px){.os-live-grid{grid-template-columns:1fr 1fr}.os-list-row{align-items:flex-start;flex-direction:column}}
+</style>
+<script id="os-integrated-loop-v1">
+(function(){
+'use strict';
+const REL='educationOS_relations', STU='educationOS_students';
+const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const load=()=>{try{return JSON.parse(localStorage.getItem(REL)||'{}')}catch(e){return{}}};
+const save=r=>{localStorage.setItem(REL,JSON.stringify(r));window.dispatchEvent(new Event('educationOS:changed'));};
+const students=()=>{try{return JSON.parse(localStorage.getItem(STU)||'[]')}catch(e){return[]}};
+const go=p=>document.querySelector('.nav button[data-page="'+p+'"]')?.click();
+const nowDate=()=>new Date().toISOString().slice(0,10);
+const dt=(date,time)=>{const x=new Date(String(date||nowDate())+'T'+String(time||'00:00'));return isNaN(x)?null:x};
+const overlaps=(a,b)=>{const as=dt(a.date,a.time),bs=dt(b.date,b.time);if(!as||!bs)return false;const ae=new Date(as.getTime()+Number(a.duration||1)*3600000),be=new Date(bs.getTime()+Number(b.duration||1)*3600000);return as<be&&bs<ae};
+function names(){const ss=students();return Object.fromEntries(ss.map(s=>[String(s.id),s.name]));}
+function courseMap(r){return Object.fromEntries((r.courses||[]).map(c=>[String(c.id),c]));}
+function syncConflicts(){
+ const r=load(), ls=r.lessons||[], ts=r.transportTasks||[], cs=courseMap(r), ss=names(), old=r.conflicts||[];
+ const manual=old.filter(x=>!String(x.id||'').startsWith('auto_'));
+ const autos=[];
+ for(let i=0;i<ts.length;i++)for(let j=i+1;j<ts.length;j++){
+   const a=ts[i],b=ts[j];if(a.status==='已取消'||b.status==='已取消'||a.date!==b.date||!overlaps(a,b))continue;
+   if(a.driverId&&a.driverId===b.driverId)autos.push({id:'auto_driver_'+a.id+'_'+b.id,type:'司机冲突',title:'司机时间冲突',date:a.date,time:a.time,studentId:a.studentId,source:'接送',sourceId:a.id,relatedId:b.id,status:'待处理',note:'同一司机的接送任务时间重叠。'});
+   if(a.vehicleId&&a.vehicleId===b.vehicleId)autos.push({id:'auto_vehicle_'+a.id+'_'+b.id,type:'车辆冲突',title:'车辆时间冲突',date:a.date,time:a.time,studentId:a.studentId,source:'接送',sourceId:a.id,relatedId:b.id,status:'待处理',note:'同一车辆的接送任务时间重叠。'});
+   if(a.studentId&&a.studentId===b.studentId)autos.push({id:'auto_student_transport_'+a.id+'_'+b.id,type:'学生接送冲突',title:'学生接送安排冲突',date:a.date,time:a.time,studentId:a.studentId,source:'接送',sourceId:a.id,relatedId:b.id,status:'待处理',note:'同一学生的接送任务时间重叠。'});
+ }
+ for(const t of ts)for(const l of ls){
+   if(t.status==='已取消'||l.status==='已取消'||String(t.studentId)!==String(l.studentId)||!overlaps(t,l))continue;
+   const id='auto_lesson_transport_'+t.id+'_'+l.id;
+   autos.push({id,type:'课程接送冲突',title:'课程与接送时间冲突',date:t.date,time:t.time,studentId:t.studentId,source:'接送',sourceId:t.id,relatedId:l.id,courseId:l.courseId,status:'待处理',note:'接送任务与课程实际安排时间重叠。'});
+ }
+ const dedup=[];const seen=new Set();
+ [...manual,...autos].forEach(x=>{const k=String(x.id);if(!seen.has(k)){seen.add(k);dedup.push(x)}});
+ r.conflicts=dedup;save(r);
+}
+function liveData(){
+ const r=load(),ss=students(),ls=r.lessons||[],ts=r.transportTasks||[],tasks=r.tasks||[],f=r.feedbacks||[],p=r.payments||[],pk=r.packages||[],conf=r.conflicts||[],prog=r.progressRecords||[],goals=r.academicGoals||[];
+ const today=nowDate(), month=today.slice(0,7);
+ return {r,ss,ls,ts,tasks,f,p,pk,conf,prog,goals,today,month,
+  todayLessons:ls.filter(x=>x.date===today&&x.status!=='已取消'),
+  todayTransport:ts.filter(x=>x.date===today&&x.status!=='已取消'),
+  pendingTasks:tasks.filter(x=>x.status!=='已完成'),
+  pendingFeedback:f.filter(x=>!['已同步','已处理'].includes(x.status||'待跟进')),
+  pendingConf:conf.filter(x=>x.status!=='已处理'),
+  pendingTransport:ts.filter(x=>x.status!=='已完成'&&x.status!=='已取消'),
+  monthSpend:p.filter(x=>String(x.date||'').slice(0,7)===month&&x.status!=='已取消').reduce((n,x)=>n+Number(x.amount||0),0),
+  packageWarn:pk.filter(x=>Number(x.remainingHours!=null?x.remainingHours:(Number(x.totalHours||0)-Number(x.usedHours||0)))<=4&&Number(x.remainingHours!=null?x.remainingHours:(Number(x.totalHours||0)-Number(x.usedHours||0)))>=0)
+ };
+}
+function studentTimeline(studentId){
+ const d=liveData(),r=d.r,ss=d.ss,cm=courseMap(r),out=[];
+ (r.lessons||[]).filter(x=>!studentId||String(x.studentId)===String(studentId)).forEach(x=>out.push({date:x.date,time:x.time||'',type:'课程',title:(cm[x.courseId]?.subject||cm[x.courseId]?.name||'课程')+' · '+(x.status||''),note:x.note||'',page:'教育管理',id:x.courseId}));
+ (r.transportTasks||[]).filter(x=>!studentId||String(x.studentId)===String(studentId)).forEach(x=>out.push({date:x.date,time:x.time||'',type:'接送',title:'接送 · '+(x.status||'待确认'),note:(x.from||'')+' → '+(x.to||''),page:'接送管理',id:x.id}));
+ (r.feedbacks||[]).filter(x=>!studentId||String(x.studentId)===String(studentId)).forEach(x=>out.push({date:x.date||String(x.createdAt||'').slice(0,10),time:'',type:'教师反馈',title:x.teacherName||'教师反馈',note:x.content||'',page:'教育管理',id:x.courseId}));
+ (r.assessments||[]).filter(x=>!studentId||String(x.studentId)===String(studentId)).forEach(x=>out.push({date:x.date||'',time:'',type:'成绩',title:x.subjectName||x.subject||'成绩记录',note:x.score!=null?'成绩：'+x.score:'',page:'学业管理',id:x.id}));
+ (r.academicGoals||[]).filter(x=>!studentId||String(x.studentId)===String(studentId)).forEach(x=>out.push({date:x.createdAt?String(x.createdAt).slice(0,10):'',time:'',type:'学业目标',title:x.title||x.goal||'学业目标',note:x.status||'进行中',page:'学业管理',id:x.id}));
+ (r.progressRecords||[]).filter(x=>!studentId||String(x.studentId)===String(studentId)).forEach(x=>out.push({date:x.date||'',time:'',type:'学习记录',title:x.level||'学习进度',note:x.note||'',page:'学业管理',id:x.id}));
+ (r.tasks||[]).filter(x=>!studentId||String(x.studentId)===String(studentId)).forEach(x=>out.push({date:x.dueDate||x.date||'',time:'',type:'任务',title:x.title||'家庭任务',note:x.status||'待处理',page:'任务',id:x.id}));
+ return out.filter(x=>x.date).sort((a,b)=>(String(b.date)+String(b.time)).localeCompare(String(a.date)+String(a.time))).slice(0,80);
+}
+function openTask(id){
+ const r=load(),t=(r.tasks||[]).find(x=>String(x.id)===String(id));if(!t)return;
+ const m=document.getElementById('unifiedFormModal');if(!m){alert('任务详情暂时不可用');return}
+ const f=document.getElementById('ufFields'),title=document.getElementById('ufTitle'),sub=document.getElementById('ufSub');
+ title.textContent='任务详情';sub.textContent='任务、反馈与学生记录保持同一条数据链';
+ f.innerHTML='<div class="uf-field full"><label>任务名称</label><input id="osTaskTitle" value="'+esc(t.title||'')+'"></div><div class="uf-field"><label>截止日期</label><input id="osTaskDue" type="date" value="'+esc(t.dueDate||t.date||'')+'"></div><div class="uf-field"><label>状态</label><select id="osTaskStatus"><option>待处理</option><option>已完成</option></select></div><div class="uf-field full"><label>任务备注</label><textarea id="osTaskNote">'+esc(t.note||'')+'</textarea></div>';
+ document.getElementById('osTaskStatus').value=t.status||'待处理';
+ const actions=m.querySelector('.uf-actions');actions.innerHTML='<button type="button" class="family-btn cancel" id="osTaskCancel">取消</button><button type="button" class="family-btn save" id="osTaskSave">保存</button>';
+ m.classList.add('show');m.setAttribute('aria-hidden','false');
+ document.getElementById('osTaskCancel').onclick=()=>m.classList.remove('show');
+ document.getElementById('osTaskSave').onclick=()=>{t.title=document.getElementById('osTaskTitle').value.trim();t.dueDate=document.getElementById('osTaskDue').value;t.status=document.getElementById('osTaskStatus').value;t.note=document.getElementById('osTaskNote').value;r.tasks=r.tasks||[];save(r);m.classList.remove('show');};
+}
+function resolveConflict(id){
+ const r=load(),x=(r.conflicts||[]).find(c=>String(c.id)===String(id));if(!x)return;
+ x.status='已处理';x.resolvedAt=new Date().toISOString();save(r);
+}
+function renderClosure(){
+ syncConflicts();
+ const d=liveData(),r=d.r,ss=d.ss,cm=courseMap(r),sn=names();
+ const tl=document.getElementById('osTimelinePanel');
+ if(tl){
+   const sel=document.getElementById('osTimelineStudent');const sid=sel?.value||'';
+   const rows=studentTimeline(sid);
+   tl.querySelector('#osTimelineRows').innerHTML=rows.length?rows.map(x=>'<div class="os-list-row os-clickable" data-os-page="'+esc(x.page)+'" data-os-id="'+esc(x.id||'')+'"><div><b>'+esc(x.title)+'</b><div class="os-mini">'+esc(x.date)+' '+esc(x.time)+' · '+esc(x.type)+' · '+esc(x.note||'')+'</div></div><span class="os-status">'+esc(x.type)+'</span></div>').join(''):'<span class="label">暂无相关记录。</span>';
+ }
+ const home=document.getElementById('dashboard');
+ if(home){
+   let box=document.getElementById('osLiveHome');if(!box){box=document.createElement('section');box.id='osLiveHome';box.className='section';home.prepend(box);}
+   box.innerHTML='<div class="os-closure"><div class="os-closure-head"><h3>家庭实时闭环</h3><span class="label">数据来自课程、接送、任务、反馈、费用、冲突与学业记录</span></div><div class="os-live-grid">'+
+   [['今日课程',d.todayLessons.length,'家庭日程'],['今日接送',d.todayTransport.length,'接送管理'],['待处理',d.pendingTasks.length+d.pendingConf.length,'待处理'],['本月费用','</html>+d.monthSpend.toFixed(2),'家庭费用'],['待教师反馈',d.pendingFeedback.length,'教育管理'],['接送待执行',d.pendingTransport.length,'接送管理'],['课时包预警',d.packageWarn.length,'教育管理'],['学业记录',d.prog.length,'学业管理']].map(a=>'<div class="os-live-card" data-os-page="'+a[2]+'"><span class="label">'+a[0]+'</span><div class="n">'+a[1]+'</div><div class="s">点击查看</div></div>').join('')+'</div></div>';
+ }
+ const pending=document.getElementById('pendingPage');
+ if(pending){
+   let box=document.getElementById('osPendingClosure');if(!box){box=document.createElement('section');box.id='osPendingClosure';box.className='section';pending.appendChild(box);}
+   const items=[...d.pendingConf.map(x=>({kind:'冲突',title:x.title||x.type,note:x.note||'',id:x.id,action:'处理冲突'})),...d.pendingFeedback.map(x=>({kind:'反馈',title:x.teacherName||'教师反馈',note:x.content||'',id:x.id,action:'查看反馈'})),...d.pendingTasks.map(x=>({kind:'任务',title:x.title||'任务',note:x.note||'',id:x.id,action:'处理任务'})),...d.pendingTransport.map(x=>({kind:'接送',title:sn[x.studentId]||'学生',note:(x.date||'')+' '+(x.time||'')+' · '+(x.from||'')+' → '+(x.to||''),id:x.id,action:'查看接送'}))];
+   box.innerHTML='<div class="os-closure"><div class="os-closure-head"><h3>统一待处理队列</h3><span class="label">'+items.length+' 项</span></div>'+ (items.length?items.slice(0,30).map(x=>'<div class="os-list-row os-clickable" data-os-kind="'+x.kind+'" data-os-id="'+esc(x.id)+'"><div><b>'+esc(x.title)+'</b><div class="os-mini">'+esc(x.kind)+' · '+esc(x.note)+'</div></div><button class="os-action">'+x.action+'</button></div>').join(''):'<span class="label">当前没有待处理事项。</span>')+'</div>';
+ }
+ const transport=document.getElementById('transportPage');
+ if(transport){
+   let box=document.getElementById('osTransportClosure');if(!box){box=document.createElement('section');box.id='osTransportClosure';box.className='section';transport.appendChild(box);}
+   box.innerHTML='<div class="os-closure"><div class="os-closure-head"><h3>接送与冲突闭环</h3><span class="label">接送任务变化会自动重新检查司机、车辆、学生与课程冲突</span></div><div class="os-live-grid"><div class="os-live-card" data-os-page="接送管理"><span class="label">今日接送</span><div class="n">'+d.todayTransport.length+'</div><div class="s">查看任务</div></div><div class="os-live-card" data-os-page="待处理"><span class="label">待处理冲突</span><div class="n">'+d.pendingConf.length+'</div><div class="s">进入冲突中心</div></div><div class="os-live-card" data-os-page="接送管理"><span class="label">待执行</span><div class="n">'+d.pendingTransport.length+'</div><div class="s">查看未完成</div></div><div class="os-live-card" data-os-page="任务"><span class="label">家庭任务</span><div class="n">'+d.pendingTasks.length+'</div><div class="s">查看任务</div></div></div><div id="osConflictRows">'+(d.pendingConf.length?d.pendingConf.slice(0,12).map(x=>'<div class="os-list-row"><div><b>'+esc(x.title||x.type)+'</b><div class="os-mini">'+esc(sn[x.studentId]||'家庭')+' · '+esc(x.date||'')+' '+esc(x.time||'')+' · '+esc(x.note||'')+'</div></div><button class="os-action" data-os-resolve="'+esc(x.id)+'">标记已处理</button></div>').join(''):'<span class="label">当前没有未处理冲突。</span>')+'</div></div>';
+ }
+ const report=document.getElementById('familyReportPage');
+ if(report){
+   let box=document.getElementById('osReportClosure');if(!box){box=document.createElement('section');box.id='osReportClosure';box.className='section';report.prepend(box);}
+   const completed=d.ls.filter(x=>x.status==='已完成').length;
+   const paid=d.p.filter(x=>x.status!=='已取消').reduce((n,x)=>n+Number(x.amount||0),0);
+   box.innerHTML='<div class="os-closure"><div class="os-closure-head"><h3>家庭实时总览</h3><span class="label">所有指标直接读取统一家庭数据</span></div><div class="os-live-grid">'+
+   [['学生',d.ss.length,'学生完整档案'],['课程完成',completed,'家庭日程'],['接送任务',d.ts.length,'接送管理'],['未处理冲突',d.pendingConf.length,'待处理'],['待执行任务',d.pendingTasks.length,'任务'],['教师反馈待跟进',d.pendingFeedback.length,'教育管理'],['本月费用','</html>+d.monthSpend.toFixed(2),'家庭费用'],['累计费用','</html>+paid.toFixed(2),'家庭费用']].map(a=>'<div class="os-live-card" data-os-page="'+a[2]+'"><span class="label">'+a[0]+'</span><div class="n">'+a[1]+'</div><div class="s">点击进入</div></div>').join('')+'</div></div>';
+ }
+}
+function ensureTimeline(){
+ const p=document.getElementById('familySchedule');if(!p||document.getElementById('osTimelinePanel'))return;
+ const sec=document.createElement('section');sec.className='section';sec.id='osTimelinePanel';
+ sec.innerHTML='<div class="os-closure"><div class="os-closure-head"><div><h3>学生时间线</h3><span class="label">课程、接送、教师反馈、成绩、学业目标、学习记录与任务统一进入同一条时间线。</span></div><select id="osTimelineStudent" style="padding:8px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface2);color:var(--text)"><option value="">全部学生</option>'+students().map(s=>'<option value="'+esc(s.id)+'">'+esc(s.name)+'</option>').join('')+'</select></div><div id="osTimelineRows"></div></div>';
+ p.appendChild(sec);
+ document.getElementById('osTimelineStudent').onchange=renderClosure;
+}
+function refresh(){try{ensureTimeline();renderClosure();const n=document.getElementById('topStudentCount');if(n)n.textContent=students().length+' 位学生';}catch(e){console.warn('教育管家闭环刷新失败',e)}}
+document.addEventListener('click',e=>{
+ const nav=e.target.closest('.nav button');if(nav){setTimeout(refresh,120);return;}
+ const card=e.target.closest('[data-os-page]');if(card&&!e.target.closest('button')){go(card.dataset.osPage);return;}
+ const res=e.target.closest('[data-os-resolve]');if(res){e.stopPropagation();resolveConflict(res.dataset.osResolve);return;}
+ const row=e.target.closest('[data-os-kind]');if(row){
+   const k=row.dataset.osKind,id=row.dataset.osId;
+   if(k==='冲突'){const x=load().conflicts?.find(a=>String(a.id)===String(id));if(x)alert((x.title||x.type)+'\n\n'+(x.note||'')+'\n\n状态：'+(x.status||'待处理')); }
+   else if(k==='任务')openTask(id);
+   else if(k==='接送')go('接送管理');
+   else if(k==='反馈')go('教育管理');
+ }
+ const tl=e.target.closest('[data-os-id]');if(tl){go(tl.dataset.osPage);}
+});
+window.addEventListener('educationOS:changed',()=>setTimeout(refresh,80));
+setInterval(refresh,5000);
+setTimeout(refresh,700);
+})();
+</script>
 </body></html>
