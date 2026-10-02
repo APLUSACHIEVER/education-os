@@ -1369,4 +1369,163 @@
   setInterval(()=>{if(document.getElementById('eduCourseDetailPanel')?.style.display!=='none')patchDetail()},1200);
 })();
 </script>
+
+<script id="product-closure-v2">
+(function(){
+  const KEY='educationOS_relations', STU='educationOS_students';
+  const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const load=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return{}}};
+  const save=d=>localStorage.setItem(KEY,JSON.stringify(d));
+  const ss=()=>{try{return JSON.parse(localStorage.getItem(STU)||'[]')}catch(e){return[]}};
+  const uid=p=>p+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+  const today=()=>new Date().toISOString().slice(0,10);
+  const notify=()=>window.dispatchEvent(new Event('educationOS:changed'));
+  function ensure(d){['courses','lessons','feedbacks','packages','teachers','payments','progressRecords','academicGoals','assessments','tasks','conflicts','transportTasks'].forEach(k=>{if(!Array.isArray(d[k]))d[k]=[]});return d}
+  function studentName(id){return ss().find(s=>String(s.id)===String(id))?.name||'学生'}
+  function course(cid){return ensure(load()).courses.find(x=>String(x.id)===String(cid))}
+  function parseWeekday(s){
+    const x=String(s||'');
+    const m=x.match(/(?:周|星期)([一二三四五六日天])/);
+    if(m)return {'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'日':0,'天':0}[m[1]];
+    return null;
+  }
+  function nextDate(start,weekday,offset){
+    const d=new Date((start||today())+'T00:00:00'); if(isNaN(d))return null;
+    let delta=(weekday-d.getDay()+7)%7; if(delta===0&&offset===0)delta=7;
+    d.setDate(d.getDate()+delta+offset*7);
+    return d.toISOString().slice(0,10);
+  }
+  function scheduleInfo(c){
+    const s=String(c.schedule||'');
+    const wd=parseWeekday(s);
+    const tm=(s.match(/([01]?\d|2[0-3]):[0-5]\d/)||[])[0]||c.time||'17:00';
+    return {weekday:wd,time:tm};
+  }
+  function generatePlannedLessons(cid,count){
+    const d=ensure(load()),c=d.courses.find(x=>String(x.id)===String(cid));if(!c)return;
+    const info=scheduleInfo(c); if(info.weekday===null){alert('请先把课程安排写成「每周周一」至「每周周日」中的一种，例如：每周周六 15:00。');return;}
+    const n=Math.max(1,Math.min(52,Number(count)||4));
+    const existing=d.lessons.filter(l=>String(l.courseId)===String(cid));
+    let made=0;
+    for(let i=0;i<n;i++){
+      const date=nextDate(c.start||today(),info.weekday,i);
+      if(!date)continue;
+      const duplicate=existing.find(l=>String(l.date)===date&&String(l.time||'')===String(info.time||''));
+      if(duplicate)continue;
+      d.lessons.push({id:uid('lesson'),courseId:String(cid),studentId:String(c.studentId),teacherId:String(c.teacherId||''),subjectId:String(c.subject||''),date,time:info.time,duration:Number(c.duration||1),status:'已安排',planned:true,createdAt:new Date().toISOString()});
+      made++;
+    }
+    save(d);notify();alert('已生成 '+made+' 节计划课程。');
+  }
+  function setLessonStatus(lid,status){
+    const d=ensure(load()),l=d.lessons.find(x=>String(x.id)===String(lid));if(!l)return;
+    const c=d.courses.find(x=>String(x.id)===String(l.courseId)),p=c&&d.packages.find(x=>String(x.id)===String(c.packageId));
+    const was=l.status==='已完成',nowDone=status==='已完成',dur=Number(l.duration||c?.duration||0);
+    if(was!==nowDone&&p){p.usedHours=Math.max(0,Number(p.usedHours||0)+(nowDone?dur:-dur));p.status=Number(p.usedHours)>=Number(p.totalHours||0)?'已结束':'有效';}
+    l.status=status;l.planned=false;
+    if(nowDone&&!l.completedAt)l.completedAt=new Date().toISOString();
+    if(status==='已取消')l.cancelledAt=new Date().toISOString();
+    save(d);notify();
+  }
+  function editPlanned(lid){
+    const d=ensure(load()),l=d.lessons.find(x=>String(x.id)===String(lid));if(!l)return;
+    const date=prompt('课程日期',l.date);if(date===null)return;
+    const time=prompt('课程时间',l.time||'17:00');if(time===null)return;
+    const dur=Number(prompt('课时（小时）',l.duration||1));if(!dur||dur<=0)return;
+    l.date=date;l.time=time;l.duration=dur;l.updatedAt=new Date().toISOString();
+    save(d);notify();
+  }
+  function injectScheduleControls(){
+    const box=document.getElementById('eduCourseDetail');if(!box||box.querySelector('#recurringScheduleBox'))return;
+    const c=window.eduCurrentCourseId?course(window.eduCurrentCourseId):null;if(!c)return;
+    const sec=document.createElement('section');sec.className='section';sec.id='recurringScheduleBox';
+    sec.innerHTML='<div class="section-head"><div><h2>课程排课</h2><span class="label">固定课程可一次生成未来计划；计划课不会扣课时。</span></div><span class="pill">自动排课</span></div>'+
+      '<div class="card"><div class="two"><div><div class="finance-row"><span>固定安排</span><b>'+esc(c.schedule||'未设置')+'</b></div><div class="finance-row"><span>开始日期</span><b>'+esc(c.start||'未设置')+'</b></div><div class="finance-row"><span>每节时长</span><b>'+esc(c.duration||1)+' 小时</b></div></div><div><button class="primary" id="generate4Lessons" style="width:100%;margin-bottom:8px">生成未来 4 节</button><button class="link" id="generate12Lessons" style="width:100%">生成未来 12 节</button></div></div>'+
+      '<div style="margin-top:14px"><h3 style="margin:0 0 8px">已排课程</h3><div id="plannedLessonRows"></div></div></div>';
+    box.appendChild(sec);
+    sec.querySelector('#generate4Lessons').onclick=()=>generatePlannedLessons(c.id,4);
+    sec.querySelector('#generate12Lessons').onclick=()=>generatePlannedLessons(c.id,12);
+    renderPlanned(c.id);
+  }
+  function renderPlanned(cid){
+    const box=document.getElementById('plannedLessonRows');if(!box)return;
+    const d=ensure(load()),ls=d.lessons.filter(x=>String(x.courseId)===String(cid)).sort((a,b)=>(String(a.date)+' '+String(a.time)).localeCompare(String(b.date)+' '+String(b.time)));
+    box.innerHTML=ls.length?ls.slice(0,24).map(l=>'<div class="finance-row"><span><b>'+esc(l.date)+' '+esc(l.time||'')+'</b><br><span class="label">'+esc(l.duration||1)+' 小时</span></span><span><span class="pill">'+esc(l.status||'已安排')+'</span> '+(l.status==='已安排'?'<button class="link" data-plan-edit="'+esc(l.id)+'">修改</button><button class="link" data-plan-done="'+esc(l.id)+'">完成</button><button class="link" data-plan-cancel="'+esc(l.id)+'">取消</button>':'')+'</span></div>').join(''):'<span class="label">暂无排课记录。</span>';
+  }
+  function enhanceCourseDetail(){
+    const panel=document.getElementById('eduCourseDetailPanel');if(!panel||panel.style.display==='none')return;
+    injectScheduleControls();
+    const c=window.eduCurrentCourseId?course(window.eduCurrentCourseId):null;if(c)renderPlanned(c.id);
+  }
+  function calendarActions(){
+    const wrap=document.getElementById('familyScheduleEvents');if(!wrap)return;
+    const d=ensure(load()),ls=d.lessons.filter(x=>String(x.date)===today()&&x.status!=='已取消');
+    wrap.querySelectorAll('.event').forEach((el,i)=>{
+      const l=ls.sort((a,b)=>String(a.time||'').localeCompare(String(b.time||'')))[i];if(!l||el.dataset.enhanced)return;
+      el.dataset.enhanced='1';el.style.cursor='pointer';el.title='点击打开课程';
+      el.onclick=()=>{if(l.courseId&&window.eduShowCourseDetail){window.eduCurrentCourseId=String(l.courseId);document.querySelector('.nav button[data-page="教育管理"]')?.click();setTimeout(()=>window.eduShowCourseDetail(l.courseId),80)}};
+    });
+  }
+  function addPackageAlerts(){
+    const d=ensure(load()),p=d.packages||[];
+    const alerts=p.map(x=>({p:x,r:Math.max(0,Number(x.totalHours||0)-Number(x.usedHours||0))})).filter(x=>x.r<=4);
+    const holder=document.getElementById('eduPackageList');if(holder&&alerts.length){
+      holder.insertAdjacentHTML('afterbegin','<div style="margin-bottom:12px;padding:10px 12px;border-radius:10px;background:var(--surface2);color:var(--amber)">课时包提醒：'+alerts.map(x=>esc(x.p.name||'课时包')+' 剩余 '+x.r+' 小时').join(' · ')+'</div>');
+    }
+  }
+  function addStudentSubjectDetails(){
+    const page=document.getElementById('studentSubjectProfilePage'),box=document.getElementById('studentSubjectProfileContent');if(!page||!box||page.style.display==='none')return;
+    const txt=document.getElementById('studentDetailContent')?.textContent||''; if(!txt)return;
+  }
+  function addFeedbackFollowup(){
+    const d=ensure(load());
+    document.querySelectorAll('[data-delete-lesson]').forEach(()=>{});
+    const detail=document.getElementById('eduCourseDetail');if(!detail)return;
+    const c=window.eduCurrentCourseId?course(window.eduCurrentCourseId):null;if(!c)return;
+    const fb=d.feedbacks.filter(x=>String(x.courseId)===String(c.id));
+    const sec=[...detail.querySelectorAll('.section')].find(x=>x.querySelector('h2')?.textContent==='教师反馈');if(!sec)return;
+    const card=sec.querySelector('.card');if(!card)return;
+    card.querySelectorAll('[data-fb-action]').forEach(x=>x.remove());
+    fb.forEach(f=>{
+      const row=document.createElement('div');row.style.cssText='margin-top:8px;display:flex;gap:8px;flex-wrap:wrap';
+      row.innerHTML='<button class="link" data-fb-action="task" data-fb-id="'+esc(f.id)+'">'+(f.status==='已处理'?'已处理':'建立跟进任务')+'</button><button class="link" data-fb-action="done" data-fb-id="'+esc(f.id)+'">'+(f.status==='已处理'?'恢复待跟进':'标记已处理')+'</button>';
+      card.appendChild(row);
+    });
+  }
+  function taskWriteback(){
+    const d=ensure(load());
+    const tasks=d.tasks||[];
+    tasks.forEach(t=>{
+      if(t.feedbackId){
+        const f=d.feedbacks.find(x=>String(x.id)===String(t.feedbackId));
+        if(f&&t.status==='已完成')f.status='已处理';
+      }
+    });
+    save(d);
+  }
+  document.addEventListener('click',e=>{
+    const b=e.target.closest('[data-plan-edit]');if(b){editPlanned(b.dataset.planEdit);return;}
+    const done=e.target.closest('[data-plan-done]');if(done){setLessonStatus(done.dataset.planDone,'已完成');return;}
+    const cancel=e.target.closest('[data-plan-cancel]');if(cancel){if(confirm('确定取消这节计划课程吗？'))setLessonStatus(cancel.dataset.planCancel,'已取消');return;}
+    const fbt=e.target.closest('[data-fb-action]');
+    if(fbt){
+      const d=ensure(load()),f=d.feedbacks.find(x=>String(x.id)===String(fbt.dataset.fbId));if(!f)return;
+      if(fbt.dataset.fbAction==='done'){f.status=f.status==='已处理'?'待跟进':'已处理';save(d);notify();return;}
+      if(fbt.dataset.fbAction==='task'){
+        const existing=d.tasks.find(t=>String(t.feedbackId)===String(f.id)&&t.status!=='已完成');
+        if(existing){alert('这条反馈已经有一个待处理跟进任务。');return;}
+        const title=prompt('跟进任务',studentName(f.studentId)+' · '+(f.content||'学习跟进').slice(0,30));if(title===null)return;
+        const due=prompt('截止日期',today());if(due===null)return;
+        d.tasks.push({id:uid('task'),title,due,studentId:String(f.studentId),studentName:studentName(f.studentId),courseId:String(f.courseId),feedbackId:String(f.id),status:'待处理',source:'课程反馈'});
+        f.status='待跟进';save(d);notify();alert('跟进任务已建立。');return;
+      }
+    }
+  });
+  window.addEventListener('educationOS:changed',()=>{setTimeout(()=>{enhanceCourseDetail();addPackageAlerts();addFeedbackFollowup();},30)});
+  const mo=new MutationObserver(()=>{enhanceCourseDetail();calendarActions();addFeedbackFollowup();});
+  mo.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['style']});
+  setInterval(()=>{enhanceCourseDetail();calendarActions();addPackageAlerts();taskWriteback()},1500);
+  setTimeout(()=>{enhanceCourseDetail();calendarActions();addPackageAlerts();taskWriteback()},300);
+})();
+</script>
 </body></html>
