@@ -245,7 +245,10 @@
 <section class="section"><div class="grid"><div><div class="section-head"><h2>即将到期费用</h2><span class="label">未计入本月合计</span></div><div class="attention" id="upRows"></div></div>
 <div><div class="section-head"><h2>费用构成</h2><span class="label">按类别</span></div><div class="learning" id="catBars"></div><div class="finance" style="margin-top:16px"><div class="finance-row"><span>预计年度教育支出</span><b id="fYear"></b></div><div class="finance-row"><span>平均每位学生（本月）</span><b id="fAvg"></b></div></div></div></div></section>
 </div>
-  <div id="extraPage" style="display:none"></div>
+  <div id="extraPage" style="display:none"></div>\n<div id="familyAffairsPage" style="display:none"></div>
+<div id="tasksPage" style="display:none"></div>
+<div id="pendingPage" style="display:none"></div>
+<div id="familyReportPage" style="display:none"></div>
   <div id="placeholder" class="card" style="display:none;padding:42px;text-align:center"><div style="font-size:34px;margin-bottom:10px">🧩</div><h2 id="placeholderTitle" style="margin:0 0 8px"></h2><p style="color:var(--muted);margin:0">这个模块正在搭建中。后续会接入家庭数据、学生档案和智能提醒。</p></div>
 </div></main>
 <div class="mobile-nav"><button class="active">🏠<br>首页</button><button>📅<br>日程</button><button>🎓<br>教育</button><button>📚<br>学业</button><button>☰<br>更多</button></div>
@@ -405,9 +408,9 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
     const map={
       '首页':'dashboard','客户 / 家庭档案':'familyPage','学生完整档案':'childProfile',
       '家庭日程':'familySchedule','接送管理':'transportPage','教育管理':'educationPage',
-      '学业管理':'academicPage','学科设置':'subjectSettingsPage','学校 / DSA规划':'dsaPlanning','家庭费用':'feesPage'
+      '学业管理':'academicPage','学科设置':'subjectSettingsPage','学校 / DSA规划':'dsaPlanning','家庭费用':'feesPage','家庭事务':'familyAffairsPage','任务':'tasksPage','待处理':'pendingPage','家庭报告':'familyReportPage'
     };
-    const ids=['dashboard','familyPage','childProfile','studentDetailPage','dsaPlanning','familySchedule','transportPage','educationPage','academicPage','feesPage','moeSubjectExplorer','subjectSettingsPage','placeholder'];
+    const ids=['dashboard','familyPage','childProfile','studentDetailPage','dsaPlanning','familySchedule','transportPage','educationPage','academicPage','feesPage','moeSubjectExplorer','subjectSettingsPage','familyAffairsPage','tasksPage','pendingPage','familyReportPage','placeholder'];
     const title=document.getElementById('pageTitle'),sub=document.getElementById('pageSub');
     document.querySelectorAll('.nav button').forEach(function(btn){
       btn.addEventListener('click',function(){
@@ -750,4 +753,60 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
   document.addEventListener('keydown',function(e){if(e.key==='Escape'){hideFamily();hideStudent()}},true);
 })();
 </script>
-</body></html>
+<script>
+/* 全面产品化模块：统一读取现有家庭 / 学生 / 学年 / 科目 / 教育关系数据；不建立第二套学生与课程来源 */
+(function(){
+  const REL='educationOS_relations', STU='educationOS_students';
+  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const load=k=>{try{return JSON.parse(localStorage.getItem(k)||'[]')}catch(e){return[]}};
+  const rel=()=>{let x;try{x=JSON.parse(localStorage.getItem(REL)||'{}')}catch(e){x={}};return Object.assign({teachers:[],courses:[],packages:[],lessons:[]},x)};
+  const students=()=>load(STU);
+  const allStudents=()=>students().concat([{id:'legacy_jason',name:'Jason'},{id:'legacy_amy',name:'Amy'}]).filter((s,i,a)=>a.findIndex(x=>String(x.id)===String(s.id))===i);
+  const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+  function ensureStore(){
+    const r=rel();['drivers','vehicles','transportTasks','temporaryArrangements','conflicts','tasks','affairs'].forEach(k=>{if(!Array.isArray(r[k]))r[k]=[]});
+    save(REL,r);return r;
+  }
+  function page(id,title,sub,body){const p=document.getElementById(id);if(!p)return;p.innerHTML='<section class="section" style="margin-top:0"><div class="section-head"><div><h2>'+title+'</h2><span class="label">'+sub+'</span></div></div>'+body+'</section>'}
+  function renderManagementPages(){
+    const r=ensureStore(), ss=allStudents();
+    const taskRows=r.transportTasks||[], drivers=r.drivers||[], vehicles=r.vehicles||[];
+    page('familyAffairsPage','家庭事务','集中管理家庭层面的日常事务，不复制学生资料。','<div class="cards"><div class="card"><span class="label">家庭事务</span><div class="metric">'+(r.affairs||[]).length+'</div><span class="label">家庭层面的事项</span></div><div class="card"><span class="label">学生</span><div class="metric">'+ss.length+'</div><span class="label">独立学生档案</span></div></div><div class="card"><div class="section-head"><h2>事务记录</h2><button class="link" id="addAffairBtn">＋ 新增事务</button></div><div id="affairList">'+((r.affairs||[]).length?(r.affairs||[]).map((x,i)=>'<div class="event"><div class="time">'+esc(x.date||'未定')+'</div><div><strong>'+esc(x.title)+'</strong><small>'+esc(x.note||'')+'</small></div><button class="link affair-del" data-i="'+i+'">删除</button></div>').join(''):'<span class="label">暂无家庭事务。</span>')+'</div></div>');
+    page('tasksPage','任务','把家庭教育系统中需要执行的事项集中到这里。','<div class="cards"><div class="card"><span class="label">待执行</span><div class="metric">'+(r.tasks||[]).filter(x=>x.status!=='已完成').length+'</div></div><div class="card"><span class="label">已完成</span><div class="metric">'+(r.tasks||[]).filter(x=>x.status==='已完成').length+'</div></div></div><div class="card"><div class="section-head"><h2>任务清单</h2><button class="link" id="addTaskBtn">＋ 新增任务</button></div><div id="taskList">'+((r.tasks||[]).length?(r.tasks||[]).map((x,i)=>'<div class="event"><div class="time">'+esc(x.due||'未定')+'</div><div><strong>'+esc(x.title)+'</strong><small>'+esc(x.studentName||'家庭任务')+'</small></div><span class="pill">'+esc(x.status||'待处理')+'</span><button class="link task-done" data-i="'+i+'">'+(x.status==='已完成'?'恢复待处理':'完成')+'</button></div>').join(''):'<span class="label">暂无任务。</span>')+'</div></div>');
+    const pending=[...(r.conflicts||[]).map(x=>({type:'冲突',title:x.title,note:x.note})),...(r.tasks||[]).filter(x=>x.status!=='已完成').map(x=>({type:'任务',title:x.title,note:x.due||''}))];
+    page('pendingPage','待处理','系统汇总尚未解决的任务、冲突与需要确认的事项。','<div class="cards"><div class="card"><span class="label">待处理事项</span><div class="metric">'+pending.length+'</div></div><div class="card"><span class="label">接送冲突</span><div class="metric">'+(r.conflicts||[]).length+'</div></div></div><div class="card">'+(pending.length?pending.map(x=>'<div class="item"><span class="tag '+(x.type==='冲突'?'danger':'warn')+'">'+esc(x.type)+'</span> '+esc(x.title)+'<br><span class="label">'+esc(x.note||'')+'</span></div>').join(''):'<span class="label">目前没有待处理事项。</span>')+'</div>');
+    const lessons=r.lessons||[], completed=lessons.filter(x=>x.status==='已完成').length;
+    page('familyReportPage','家庭报告','从现有学生、课程、课时与日程数据汇总，不另建重复数据。','<div class="cards"><div class="card"><span class="label">学生</span><div class="metric">'+ss.length+'</div></div><div class="card"><span class="label">课程记录</span><div class="metric">'+lessons.length+'</div></div><div class="card"><span class="label">已完成课程</span><div class="metric">'+completed+'</div></div><div class="card"><span class="label">老师</span><div class="metric">'+(r.teachers||[]).length+'</div></div></div><div class="grid"><div class="card"><h2>教育服务概览</h2><div class="finance-row"><span>课程</span><b>'+(r.courses||[]).length+' 项</b></div><div class="finance-row"><span>课时包</span><b>'+(r.packages||[]).length+' 个</b></div><div class="finance-row"><span>接送任务</span><b>'+taskRows.length+' 项</b></div></div><div class="card"><h2>报告说明</h2><span class="label">后续成绩、学习进度、教师反馈、费用与接送数据都会从各自模块汇总到家庭报告，不重复录入。</span></div></div>');
+    bindManagementActions();
+  }
+  function bindManagementActions(){
+    const r=ensureStore();
+    document.getElementById('addAffairBtn')?.addEventListener('click',()=>{const title=prompt('事务名称');if(!title)return;const date=prompt('日期','2026-10-03')||'';const note=prompt('备注','')||'';r.affairs.push({id:'affair_'+Date.now(),title,date,note});save(REL,r);renderManagementPages()});
+    document.querySelectorAll('.affair-del').forEach(b=>b.addEventListener('click',()=>{r.affairs.splice(Number(b.dataset.i),1);save(REL,r);renderManagementPages()}));
+    document.getElementById('addTaskBtn')?.addEventListener('click',()=>{const title=prompt('任务名称');if(!title)return;const due=prompt('截止日期','2026-10-03')||'';const studentName=prompt('关联学生（可留空）','')||'';r.tasks.push({id:'task_'+Date.now(),title,due,studentName,status:'待处理'});save(REL,r);renderManagementPages()});
+    document.querySelectorAll('.task-done').forEach(b=>b.addEventListener('click',()=>{const x=r.tasks[Number(b.dataset.i)];x.status=x.status==='已完成'?'待处理':'已完成';save(REL,r);renderManagementPages()}));
+  }
+  function renderEducation(){
+    const p=document.getElementById('educationPage');if(!p)return;const r=rel(),ls=r.lessons||[],now=new Date().toISOString().slice(0,10);
+    const active=ls.filter(x=>x.status!=='已取消').length, done=ls.filter(x=>x.status==='已完成').length;
+    const teacherMap=Object.fromEntries((r.teachers||[]).map(x=>[x.id,x.name]));
+    const ss=allStudents();
+    p.querySelector('.metric')&&(p.querySelectorAll('.metric')[0].textContent=active);
+    const ms=p.querySelectorAll('.metric');if(ms[1])ms[1].textContent=(r.teachers||[]).length;if(ms[2])ms[2].textContent=(r.packages||[]).length;if(ms[3])ms[3].textContent=Math.max(0,ls.filter(x=>x.status==='已安排'&&x.date<now).length);
+    const courseCard=[...p.querySelectorAll('.card')].find(x=>x.querySelector('.section-head h2')?.textContent==='课程');
+    if(courseCard){const holder=courseCard.querySelector('.event')?.parentElement||courseCard;const rows=ls.slice().sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).slice(-12);holder.innerHTML=rows.length?rows.map(l=>{const s=ss.find(x=>String(x.id)===String(l.studentId));return '<div class="event"><div class="time">'+esc(l.time||'—')+'</div><div><strong>'+esc(s?.name||'学生')+' · '+esc(l.subjectId||'课程')+'</strong><small>'+esc(teacherMap[l.teacherId]||'老师未设置')+' · '+esc(l.date||'')+' · '+esc(l.duration||'')+' 小时</small></div><span class="pill">'+esc(l.status||'已安排')+'</span></div>'}).join(''):'<span class="label">暂无课程记录。</span>'}
+  }
+  function renderDashboard(){
+    const p=document.getElementById('dashboard');if(!p)return;const r=rel(),ls=r.lessons||[],today=new Date().toISOString().slice(0,10),todayLs=ls.filter(x=>x.date===today&&x.status!=='已取消');
+    const ms=p.querySelectorAll('.metric');if(ms[0])ms[0].textContent=todayLs.length;if(ms[1])ms[1].textContent=(r.transportTasks||[]).filter(x=>x.date===today).length;if(ms[2])ms[2].textContent=(r.tasks||[]).filter(x=>x.status!=='已完成').length;if(ms[3])ms[3].textContent=ls.filter(x=>x.status==='已安排').length;
+    const timeline=p.querySelector('.timeline');if(timeline){const ss=allStudents(),tm=Object.fromEntries((r.teachers||[]).map(x=>[x.id,x.name]));timeline.innerHTML=todayLs.length?todayLs.map(l=>{const s=ss.find(x=>String(x.id)===String(l.studentId));return '<div class="event"><div class="time">'+esc(l.time||'—')+'</div><div><strong><span class="dot"></span>'+esc(s?.name||'学生')+' · '+esc(l.subjectId||'课程')+'</strong><small>'+esc(tm[l.teacherId]||'老师未设置')+' · '+esc(l.duration||'')+' 小时</small></div><span class="pill">'+esc(l.status||'已安排')+'</span></div>'}).join(''):'<div class="item"><span class="label">今天暂无课程记录。</span></div>'}
+  }
+  function observe(){
+    const ids=['dashboard','educationPage','familyAffairsPage','tasksPage','pendingPage','familyReportPage'];
+    const obs=new MutationObserver(()=>{ids.forEach(id=>{const e=document.getElementById(id);if(e&&getComputedStyle(e).display!=='none'){if(id==='dashboard')renderDashboard();if(id==='educationPage')renderEducation();if(['familyAffairsPage','tasksPage','pendingPage','familyReportPage'].includes(id))renderManagementPages()}})});
+    ids.forEach(id=>{const e=document.getElementById(id);if(e)obs.observe(e,{attributes:true,attributeFilter:['style']})});
+  }
+  function init(){ensureStore();renderManagementPages();renderDashboard();renderEducation();observe()}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>\n</body></html>
