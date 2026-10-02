@@ -1702,7 +1702,7 @@
    const d=load(),ss=students(),ps=Array.isArray(d.payments)?d.payments:[],cs=Array.isArray(d.courses)?d.courses:[],ls=Array.isArray(d.lessons)?d.lessons:[];
    box.innerHTML=ps.length?ps.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).map(p=>{
      const s=ss.find(x=>String(x.id)===String(p.studentId)),c=cs.find(x=>String(x.id)===String(p.courseId)),l=ls.find(x=>String(x.id)===String(p.lessonId));
-     return '<div class="finance-row" style="cursor:pointer" data-payment-id="'+esc(p.id)+'"><span><b>'+esc(s?.name||'家庭')+' · '+esc(c?.subject||p.category||'费用')+'</b><br><span class="label">'+esc(p.date||'')+' · '+esc(p.description||'')+(l?' · '+esc(l.time||''):'')+'</span></span><span><b>+Number(p.amount||0).toFixed(2)+'</b><br><span class="pill">'+esc(p.status||'已支付')+'</span></span></div>';
+     return '<div class="finance-row" style="cursor:pointer" data-payment-id="'+esc(p.id)+'"><span><b>'+esc(s?.name||'家庭')+' · '+esc(c?.subject||p.category||'费用')+'</b><br><span class="label">'+esc(p.date||'')+' · '+esc(p.description||'')+(l?' · '+esc(l.time||''):'')+'</span></span><span><b>$'+Number(p.amount||0).toFixed(2)+'</b><br><span class="pill">'+esc(p.status||'已支付')+'</span></span></div>';
    }).join(''):'<span class="label">目前还没有费用记录。</span>';
  }
  function showPayment(id){
