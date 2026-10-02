@@ -1684,4 +1684,44 @@
  if(oldShow)window.showSubjectProfileFromYear=function(id,year,sub){window._subjectStudentId=id;window._subjectYear=String(year);window._subjectName=sub;return oldShow(id,year,sub)};
 })();
 </script>
+
+<script id="dashboard-fees-closure-v1">
+(function(){
+ const KEY='educationOS_relations',STU='educationOS_students';
+ const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+ const load=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return{}}};
+ const students=()=>{try{return JSON.parse(localStorage.getItem(STU)||'[]')}catch(e){return[]}};
+ function ensureFeesPanel(){
+   const p=document.getElementById('feesPage');if(!p||p.querySelector('#paymentDetailPanel'))return;
+   const sec=document.createElement('section');sec.className='section';sec.id='paymentDetailPanel';
+   sec.innerHTML='<div class="section-head"><div><h2>费用明细</h2><span class="label">每一笔费用都可追溯到学生、课程、实际上课或家庭事项。</span></div><span class="pill">统一费用记录</span></div><div class="card"><div id="paymentDetailRows"></div></div>';
+   p.appendChild(sec);
+ }
+ function renderPayments(){
+   ensureFeesPanel();const box=document.getElementById('paymentDetailRows');if(!box)return;
+   const d=load(),ss=students(),ps=Array.isArray(d.payments)?d.payments:[],cs=Array.isArray(d.courses)?d.courses:[],ls=Array.isArray(d.lessons)?d.lessons:[];
+   box.innerHTML=ps.length?ps.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).map(p=>{
+     const s=ss.find(x=>String(x.id)===String(p.studentId)),c=cs.find(x=>String(x.id)===String(p.courseId)),l=ls.find(x=>String(x.id)===String(p.lessonId));
+     return '<div class="finance-row" style="cursor:pointer" data-payment-id="'+esc(p.id)+'"><span><b>'+esc(s?.name||'家庭')+' · '+esc(c?.subject||p.category||'费用')+'</b><br><span class="label">'+esc(p.date||'')+' · '+esc(p.description||'')+(l?' · '+esc(l.time||''):'')+'</span></span><span><b>+Number(p.amount||0).toFixed(2)+'</b><br><span class="pill">'+esc(p.status||'已支付')+'</span></span></div>';
+   }).join(''):'<span class="label">目前还没有费用记录。</span>';
+ }
+ function showPayment(id){
+   const d=load(),p=(d.payments||[]).find(x=>String(x.id)===String(id));if(!p)return;
+   const ss=students(),s=ss.find(x=>String(x.id)===String(p.studentId)),c=(d.courses||[]).find(x=>String(x.id)===String(p.courseId)),l=(d.lessons||[]).find(x=>String(x.id)===String(p.lessonId));
+   const m=document.getElementById('unifiedFormModal'),fields=document.getElementById('ufFields');if(!m||!fields)return;
+   document.getElementById('ufTitle').textContent='费用明细';document.getElementById('ufSub').textContent='查看费用来源与关联记录';fields.innerHTML='<div class="uf-field"><label>学生</label><input value="'+esc(s?.name||'家庭')+'" readonly></div><div class="uf-field"><label>费用类别</label><input value="'+esc(p.category||'')+'" readonly></div><div class="uf-field"><label>课程</label><input value="'+esc(c?.name||c?.subject||'未关联')+'" readonly></div><div class="uf-field"><label>实际课程</label><input value="'+esc(l?(l.date+' '+(l.time||'')):'未关联')+'" readonly></div><div class="uf-field"><label>金额（新加坡元）</label><input value="'+Number(p.amount||0).toFixed(2)+'" readonly></div><div class="uf-field"><label>状态</label><input value="'+esc(p.status||'已支付')+'" readonly></div><div class="uf-field full"><label>说明</label><textarea rows="3" readonly>'+esc(p.description||'')+'</textarea></div>';
+   document.querySelector('#unifiedFormModal .uf-actions').innerHTML='<button type="button" class="primary" id="ufDetailClose">关闭</button>';m.classList.add('show');m.setAttribute('aria-hidden','false');document.getElementById('ufDetailClose').onclick=()=>{m.classList.remove('show');m.setAttribute('aria-hidden','true');};
+ }
+ function dashboardLinks(){
+   const map={dashLessons:'家庭日程',dashTransport:'接送管理',dashPending:'待处理',dashPackages:'教育管理'};
+   Object.keys(map).forEach(id=>{const n=document.getElementById(id);if(n&&!n.dataset.linked){n.closest('.card').style.cursor='pointer';n.closest('.card').dataset.linked='1';n.closest('.card').onclick=()=>document.querySelector('.nav button[data-page="'+map[id]+'"]')?.click();}});
+   document.querySelectorAll('#dashTimeline .event').forEach(e=>{if(e.dataset.linked)return;e.dataset.linked='1';e.style.cursor='pointer';e.onclick=()=>document.querySelector('.nav button[data-page="家庭日程"]')?.click();});
+   document.querySelectorAll('#dashFinance .finance-row').forEach(e=>{if(e.dataset.linked)return;e.dataset.linked='1';e.style.cursor='pointer';e.onclick=()=>document.querySelector('.nav button[data-page="家庭费用"]')?.click();});
+ }
+ document.addEventListener('click',e=>{const p=e.target.closest('[data-payment-id]');if(p){e.preventDefault();showPayment(p.dataset.paymentId);}});
+ window.addEventListener('educationOS:changed',()=>{setTimeout(()=>{renderPayments();dashboardLinks()},60)});
+ const mo=new MutationObserver(()=>{renderPayments();dashboardLinks()});mo.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['style']});
+ setTimeout(()=>{renderPayments();dashboardLinks()},500);
+})();
+</script>
 </body></html>
