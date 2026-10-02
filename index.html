@@ -477,12 +477,14 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
       try{rel=JSON.parse(localStorage.getItem('educationOS_relations')||'{}');students=JSON.parse(localStorage.getItem('educationOS_students')||'[]')}catch(e){}
       const lessons=Array.isArray(rel.lessons)?rel.lessons:[];
       const todayLessons=lessons.filter(x=>String(x.date)===today).sort((a,b)=>String(a.time||'').localeCompare(String(b.time||'')));
+      const transportToday=Array.isArray(rel.transportTasks)?rel.transportTasks.filter(x=>String(x.date)===today).sort((a,b)=>String(a.time||'').localeCompare(String(b.time||''))):[];
+
       const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
       if(!todayLessons.length){
         wrap.innerHTML='<div class="event"><div class="time">—</div><div><strong><span class="dot"></span>暂无课程记录</strong><small>今天还没有从课程记录产生的实际课程。</small></div><span class="pill">课程</span></div>';
         return;
       }
-      wrap.innerHTML=todayLessons.map(l=>{
+      const lessonEvents=todayLessons.map(l=>{
         const s=students.find(x=>String(x.id)===String(l.studentId));
         const teacher=(rel.teachers||[]).find(x=>String(x.id)===String(l.teacherId));
         const subject=l.subjectId||'课程';
@@ -491,6 +493,13 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
         const status=l.status||'已安排';
         return '<div class="event"><div class="time">'+esc(l.time||'—')+'</div><div><strong><span class="dot"></span>'+esc(name)+' · '+esc(subject)+'</strong><small>'+esc(teacherName)+' · '+esc(l.duration||'')+' 小时</small></div><span class="pill">'+esc(status)+'</span></div>';
       }).join('');
+      const transportEvents=transportToday.map(t=>{
+        const s=students.find(x=>String(x.id)===String(t.studentId));
+        const drivers=Array.isArray(rel.drivers)?rel.drivers:[],vehicles=Array.isArray(rel.vehicles)?rel.vehicles:[];
+        const d=drivers.find(x=>String(x.id)===String(t.driverId)),v=vehicles.find(x=>String(x.id)===String(t.vehicleId));
+        return '<div class="event"><div class="time">'+esc(t.time||'—')+'</div><div><strong><span class="dot"></span>'+esc(s?.name||'学生')+' · 接送</strong><small>'+esc(t.from||'')+' → '+esc(t.to||'')+' · '+esc(d?.name||'司机未设置')+' · '+esc(v?.number||'车辆未设置')+'</small></div><span class="pill">'+esc(t.status||'待确认')+'</span></div>';
+      }).join('');
+      wrap.innerHTML=lessonEvents+(transportEvents?'<div class="event"><div class="time">接送</div><div><strong>今日接送安排</strong><small>以下接送任务来自接送管理，不重复录入。</small></div><span class="pill">'+transportToday.length+' 项</span></div>'+transportEvents:'');
     }
     const map={
       '首页':'dashboard','客户 / 家庭档案':'familyPage','学生完整档案':'childProfile',
@@ -902,7 +911,7 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
     const taskRows=r.transportTasks||[], drivers=r.drivers||[], vehicles=r.vehicles||[];
     page('familyAffairsPage','家庭事务','集中管理家庭层面的日常事务，不复制学生资料。','<div class="cards"><div class="card"><span class="label">家庭事务</span><div class="metric">'+(r.affairs||[]).length+'</div><span class="label">家庭层面的事项</span></div><div class="card"><span class="label">学生</span><div class="metric">'+ss.length+'</div><span class="label">独立学生档案</span></div></div><div class="card"><div class="section-head"><h2>事务记录</h2><button class="link" id="addAffairBtn">＋ 新增事务</button></div><div id="affairList">'+((r.affairs||[]).length?(r.affairs||[]).map((x,i)=>'<div class="event"><div class="time">'+esc(x.date||'未定')+'</div><div><strong>'+esc(x.title)+'</strong><small>'+esc(x.note||'')+'</small></div><button class="link affair-del" data-i="'+i+'">删除</button></div>').join(''):'<span class="label">暂无家庭事务。</span>')+'</div></div>');
     page('tasksPage','任务','把家庭教育系统中需要执行的事项集中到这里。','<div class="cards"><div class="card"><span class="label">待执行</span><div class="metric">'+(r.tasks||[]).filter(x=>x.status!=='已完成').length+'</div></div><div class="card"><span class="label">已完成</span><div class="metric">'+(r.tasks||[]).filter(x=>x.status==='已完成').length+'</div></div></div><div class="card"><div class="section-head"><h2>任务清单</h2><button class="link" id="addTaskBtn">＋ 新增任务</button></div><div id="taskList">'+((r.tasks||[]).length?(r.tasks||[]).map((x,i)=>'<div class="event"><div class="time">'+esc(x.due||'未定')+'</div><div><strong>'+esc(x.title)+'</strong><small>'+esc(x.studentName||'家庭任务')+'</small></div><span class="pill">'+esc(x.status||'待处理')+'</span><button class="link task-done" data-i="'+i+'">'+(x.status==='已完成'?'恢复待处理':'完成')+'</button></div>').join(''):'<span class="label">暂无任务。</span>')+'</div></div>');
-    const pending=[...(r.conflicts||[]).map(x=>({type:'冲突',title:x.title,note:x.note})),...(r.tasks||[]).filter(x=>x.status!=='已完成').map(x=>({type:'任务',title:x.title,note:x.due||''}))];
+    const pending=[...(r.conflicts||[]).filter(x=>x.status!=='已处理').map(x=>({type:'冲突',title:x.title,note:x.note})),...(r.tasks||[]).filter(x=>x.status!=='已完成').map(x=>({type:'任务',title:x.title,note:x.due||''})),...(r.transportTasks||[]).filter(x=>x.status!=='已完成'&&x.status!=='已取消').map(x=>({type:'接送',title:(allStudents().find(s=>String(s.id)===String(x.studentId))?.name||'学生')+' · 接送任务待确认',note:(x.date||'')+' '+(x.time||'')}))];
     page('pendingPage','待处理','系统汇总尚未解决的任务、冲突与需要确认的事项。','<div class="cards"><div class="card"><span class="label">待处理事项</span><div class="metric">'+pending.length+'</div></div><div class="card"><span class="label">接送冲突</span><div class="metric">'+(r.conflicts||[]).length+'</div></div></div><div class="card">'+(pending.length?pending.map(x=>'<div class="item"><span class="tag '+(x.type==='冲突'?'danger':'warn')+'">'+esc(x.type)+'</span> '+esc(x.title)+'<br><span class="label">'+esc(x.note||'')+'</span></div>').join(''):'<span class="label">目前没有待处理事项。</span>')+'</div>');
     const lessons=r.lessons||[], completed=lessons.filter(x=>x.status==='已完成').length;
     page('familyReportPage','家庭报告','从现有学生、课程、课时与日程数据汇总，不另建重复数据。','<div class="cards"><div class="card"><span class="label">学生</span><div class="metric">'+ss.length+'</div></div><div class="card"><span class="label">课程记录</span><div class="metric">'+lessons.length+'</div></div><div class="card"><span class="label">已完成课程</span><div class="metric">'+completed+'</div></div><div class="card"><span class="label">老师</span><div class="metric">'+(r.teachers||[]).length+'</div></div></div><div class="grid"><div class="card"><h2>教育服务概览</h2><div class="finance-row"><span>课程</span><b>'+(r.courses||[]).length+' 项</b></div><div class="finance-row"><span>课时包</span><b>'+(r.packages||[]).length+' 个</b></div><div class="finance-row"><span>接送任务</span><b>'+taskRows.length+' 项</b></div></div><div class="card"><h2>报告说明</h2><span class="label">后续成绩、学习进度、教师反馈、费用与接送数据都会从各自模块汇总到家庭报告，不重复录入。</span></div></div>');
