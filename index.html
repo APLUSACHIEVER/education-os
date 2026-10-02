@@ -844,12 +844,22 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
     p.appendChild(sec);
   }
   function renderPlanningAndFees(){
-    const r=ensureStore(),ss=allStudents();
+    const r=ensureStore();
     const d=document.getElementById('dsaPlanning');
-    if(d&&!d.dataset.productized){d.dataset.productized='1';const old=d.innerHTML;d.innerHTML='<section class="section" style="margin-top:0"><div class="section-head"><div><h2>学校 / DSA规划</h2><span class="label">规划记录与学生学年档案分开：规划可以有多个候选，实际学校写入对应学年</span></div><button class="link" id="addPlanningBtn">＋ 新增规划</button></div><div class="card" id="planningList">'+old+'</div></section>';d.querySelector('#addPlanningBtn').onclick=()=>{const student=prompt('学生姓名');if(!student)return;const type=prompt('规划类型','学校规划 / DSA');const target=prompt('目标学校或项目');if(!target)return;(r.plans||(r.plans=[])).push({id:'plan_'+Date.now(),studentName:student,type:type||'规划',target,status:'规划中'});save(REL,r);renderPlanningAndFees()};}
+    if(d){
+      let box=d.querySelector('#planningDynamic');
+      if(!box){box=document.createElement('section');box.className='section';box.id='planningDynamic';d.appendChild(box);}
+      const plans=r.plans||[];
+      box.innerHTML='<div class="section-head"><div><h2>规划记录</h2><span class="label">候选学校与 DSA 项目属于规划；实际学校写入学生对应学年</span></div><button class="link" id="addPlanningBtn">＋ 新增规划</button></div><div class="card">'+(plans.length?plans.map((x,i)=>'<div class="event"><div><strong>'+esc(x.studentName||'学生')+' · '+esc(x.target)+'</strong><small>'+esc(x.type||'规划')+' · '+esc(x.status||'规划中')+'</small></div><button class="link plan-done" data-i="'+i+'">'+(x.status==='已完成'?'恢复规划中':'标记完成')+'</button></div>').join(''):'<span class="label">暂无规划记录。</span>')+'</div>';
+      box.querySelector('#addPlanningBtn').onclick=()=>{const studentName=prompt('学生姓名');if(!studentName)return;const type=prompt('规划类型','学校规划 / DSA')||'规划';const target=prompt('目标学校或项目');if(!target)return;(r.plans||(r.plans=[])).push({id:'plan_'+Date.now(),studentName,type,target,status:'规划中'});save(REL,r);renderPlanningAndFees()};
+      box.querySelectorAll('.plan-done').forEach(b=>b.onclick=()=>{const x=(r.plans||[])[+b.dataset.i];x.status=x.status==='已完成'?'规划中':'已完成';save(REL,r);renderPlanningAndFees()});
+    }
     const f=document.getElementById('feesPage');
-    if(f&&!f.dataset.productized){f.dataset.productized='1';f.innerHTML='<section class="section" style="margin-top:0"><div class="section-head"><div><h2>家庭费用</h2><span class="label">费用记录独立保存，课程与课时包只引用费用结果，不重复录入</span></div><button class="link" id="addFeeBtn">＋ 新增费用</button></div><div class="cards" id="feeStats"></div><div class="card" id="feeList"></div></section>';f.querySelector('#addFeeBtn').onclick=()=>{const student=prompt('学生姓名（可留空）','');const item=prompt('费用项目');if(!item)return;const amount=Number(prompt('金额','0'));if(!amount)return;const date=prompt('日期','2026-10-03')||'';(r.fees||(r.fees=[])).push({id:'fee_'+Date.now(),studentName:student,item,amount,date,status:'未支付'});save(REL,r);renderPlanningAndFees()};}
-    if(f){const fees=r.fees||[],paid=fees.filter(x=>x.status==='已支付').reduce((a,x)=>a+Number(x.amount||0),0),unpaid=fees.filter(x=>x.status!=='已支付').reduce((a,x)=>a+Number(x.amount||0),0);f.querySelector('#feeStats').innerHTML='<div class="card"><span class="label">费用记录</span><div class="metric">'+fees.length+'</div></div><div class="card"><span class="label">已支付</span><div class="metric">
+    if(f){
+      let box=f.querySelector('#feeDynamic');
+      if(!box){box=document.createElement('section');box.className='section';box.id='feeDynamic';f.appendChild(box);}
+      const fees=r.fees||[],paid=fees.filter(x=>x.status==='已支付').reduce((a,x)=>a+Number(x.amount||0),0),unpaid=fees.filter(x=>x.status!=='已支付').reduce((a,x)=>a+Number(x.amount||0),0);
+      box.innerHTML='<div class="section-head"><div><h2>费用记录</h2><span class="label">家庭费用统一记录在这里，课程与课时包不重复录入</span></div><button class="link" id="addFeeBtn">＋ 新增费用</button></div><div class="cards"><div class="card"><span class="label">记录</span><div class="metric">'+fees.length+'</div></div><div class="card"><span class="label">已支付</span><div class="metric">
     const p=document.getElementById('dashboard');if(!p)return;const r=rel(),ls=r.lessons||[],today=new Date().toISOString().slice(0,10),todayLs=ls.filter(x=>x.date===today&&x.status!=='已取消');
     const ms=p.querySelectorAll('.metric');if(ms[0])ms[0].textContent=todayLs.length;if(ms[1])ms[1].textContent=(r.transportTasks||[]).filter(x=>x.date===today).length;if(ms[2])ms[2].textContent=(r.tasks||[]).filter(x=>x.status!=='已完成').length;if(ms[3])ms[3].textContent=ls.filter(x=>x.status==='已安排').length;
     const timeline=p.querySelector('.timeline');if(timeline){const ss=allStudents(),tm=Object.fromEntries((r.teachers||[]).map(x=>[x.id,x.name]));timeline.innerHTML=todayLs.length?todayLs.map(l=>{const s=ss.find(x=>String(x.id)===String(l.studentId));return '<div class="event"><div class="time">'+esc(l.time||'—')+'</div><div><strong><span class="dot"></span>'+esc(s?.name||'学生')+' · '+esc(l.subjectId||'课程')+'</strong><small>'+esc(tm[l.teacherId]||'老师未设置')+' · '+esc(l.duration||'')+' 小时</small></div><span class="pill">'+esc(l.status||'已安排')+'</span></div>'}).join(''):'<div class="item"><span class="label">今天暂无课程记录。</span></div>'}
@@ -875,7 +885,7 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
   function init(){ensureStore();renderManagementPages();renderDashboard();renderEducation();renderAcademic();renderTransport();observe()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
-</script>\n</body></html>+unpaid.toFixed(2)+'</div></div>';f.querySelector('#feeList').innerHTML=fees.length?fees.slice().reverse().map((x,i)=>'<div class="event"><div class="time">'+esc(x.date||'')+'</div><div><strong>'+esc(x.item)+'</strong><small>'+esc(x.studentName||'家庭')+' · 
+</script>\n</body></html>+unpaid.toFixed(2)+'</div></div></div><div class="card">'+(fees.length?fees.slice().reverse().map((x,i)=>'<div class="event"><div class="time">'+esc(x.date||'')+'</div><div><strong>'+esc(x.item||'费用')+'</strong><small>'+esc(x.studentName||'家庭')+' · 
     const p=document.getElementById('dashboard');if(!p)return;const r=rel(),ls=r.lessons||[],today=new Date().toISOString().slice(0,10),todayLs=ls.filter(x=>x.date===today&&x.status!=='已取消');
     const ms=p.querySelectorAll('.metric');if(ms[0])ms[0].textContent=todayLs.length;if(ms[1])ms[1].textContent=(r.transportTasks||[]).filter(x=>x.date===today).length;if(ms[2])ms[2].textContent=(r.tasks||[]).filter(x=>x.status!=='已完成').length;if(ms[3])ms[3].textContent=ls.filter(x=>x.status==='已安排').length;
     const timeline=p.querySelector('.timeline');if(timeline){const ss=allStudents(),tm=Object.fromEntries((r.teachers||[]).map(x=>[x.id,x.name]));timeline.innerHTML=todayLs.length?todayLs.map(l=>{const s=ss.find(x=>String(x.id)===String(l.studentId));return '<div class="event"><div class="time">'+esc(l.time||'—')+'</div><div><strong><span class="dot"></span>'+esc(s?.name||'学生')+' · '+esc(l.subjectId||'课程')+'</strong><small>'+esc(tm[l.teacherId]||'老师未设置')+' · '+esc(l.duration||'')+' 小时</small></div><span class="pill">'+esc(l.status||'已安排')+'</span></div>'}).join(''):'<div class="item"><span class="label">今天暂无课程记录。</span></div>'}
@@ -888,7 +898,10 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
   function init(){ensureStore();renderManagementPages();renderDashboard();renderEducation();renderAcademic();renderTransport();observe()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
-</script>\n</body></html>+Number(x.amount||0).toFixed(2)+'</small></div><span class="pill">'+esc(x.status||'未支付')+'</span><button class="link fee-toggle" data-i="'+i+'">'+(x.status==='已支付'?'标记未支付':'标记已支付')+'</button></div>').join(''):'<span class="label">暂无费用记录。</span>';f.querySelectorAll('.fee-toggle').forEach(b=>b.onclick=()=>{const idx=fees.length-1-Number(b.dataset.i);fees[idx].status=fees[idx].status==='已支付'?'未支付':'已支付';save(REL,r);renderPlanningAndFees()});}
+</script>\n</body></html>+Number(x.amount||0).toFixed(2)+'</small></div><span class="pill">'+esc(x.status||'未支付')+'</span><button class="link fee-toggle" data-i="'+i+'">'+(x.status==='已支付'?'标记未支付':'标记已支付')+'</button></div>').join(''):'<span class="label">暂无费用记录。</span>')+'</div>';
+      box.querySelector('#addFeeBtn').onclick=()=>{const studentName=prompt('学生姓名（可留空）','')||'';const item=prompt('费用项目');if(!item)return;const amount=Number(prompt('金额','0'));if(!amount)return;const date=prompt('日期','2026-10-03')||'';(r.fees||(r.fees=[])).push({id:'fee_'+Date.now(),studentName,item,amount,date,status:'未支付'});save(REL,r);renderPlanningAndFees()};
+      box.querySelectorAll('.fee-toggle').forEach(b=>b.onclick=()=>{const feesNow=r.fees||[],idx=feesNow.length-1-Number(b.dataset.i);if(!feesNow[idx])return;feesNow[idx].status=feesNow[idx].status==='已支付'?'未支付':'已支付';save(REL,r);renderPlanningAndFees()});
+    }
   }
   function renderDashboard(){
     const p=document.getElementById('dashboard');if(!p)return;const r=rel(),ls=r.lessons||[],today=new Date().toISOString().slice(0,10),todayLs=ls.filter(x=>x.date===today&&x.status!=='已取消');
