@@ -317,12 +317,7 @@
  window.renderEducationStudents=render;
  function getStudentById(id){
    const list=read();
-   const legacy=[
-     {id:'legacy_',name:'',englishName:'',grade:'Primary 5',schoolYear:'2026',stage:'Primary',path:'小学普通课程',school:'当前小学',subjects:'English · Mathematics · Science',goal:'提升英语词汇',gender:'男',nationality:'Singapore',relationship:'学生',dob:'2015-01-01'},
-     {id:'legacy_',name:'',englishName:'',grade:'Primary 3',schoolYear:'2026',stage:'Primary',path:'小学普通课程',school:'当前小学',subjects:'English · Mathematics · Science',goal:'建立阅读习惯',gender:'女',nationality:'Singapore',relationship:'学生',dob:'2017-01-01'}
-   ];
-   const all=[...legacy,...list];
-   return all.find(s=>s.id===id)||null;
+   return list.find(s=>s.id===id)||null;
  }
  function showStudentProfile(id){
    const s=getStudentById(id); if(!s)return;
