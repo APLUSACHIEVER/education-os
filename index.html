@@ -918,22 +918,83 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
   function renderTransport(){
     const p=document.getElementById('transportPage');if(!p)return;
     const r=ensureStore(), ss=allStudents(), tasks=r.transportTasks||[], drivers=r.drivers||[], vehicles=r.vehicles||[], temps=r.temporaryArrangements||[], conflicts=r.conflicts||[];
-    const studentOptions=ss.map(s=>'<option value="'+esc(s.id)+'">'+esc(s.name)+'</option>').join('');
-    p.innerHTML='<section class="section" style="margin-top:0"><div class="section-head"><div><h2>接送管理</h2><span class="label">学生、司机、车辆、接送任务、临时安排与冲突统一管理</span></div><button class="link" id="addTransportBtn">＋ 新增接送任务</button></div>'+
-      '<div class="cards"><div class="card"><span class="label">今日接送</span><div class="metric">'+tasks.length+'</div></div><div class="card"><span class="label">司机</span><div class="metric">'+drivers.length+'</div></div><div class="card"><span class="label">车辆</span><div class="metric">'+vehicles.length+'</div></div><div class="card"><span class="label">冲突</span><div class="metric">'+conflicts.length+'</div></div></div>'+
-      '<div class="grid"><div class="card"><div class="section-head"><h2>司机</h2><button class="link" id="addDriverBtn">＋ 新增</button></div><div id="driverList">'+(drivers.length?drivers.map((x,i)=>'<div class="event"><div><strong>'+esc(x.name)+'</strong><small>'+esc(x.phone||'')+' · '+esc(x.role||'主司机')+'</small></div><button class="link driver-del" data-i="'+i+'">删除</button></div>').join(''):'<span class="label">暂无司机资料。</span>')+'</div></div>'+
-      '<div class="card"><div class="section-head"><h2>车辆</h2><button class="link" id="addVehicleBtn">＋ 新增</button></div><div id="vehicleList">'+(vehicles.length?vehicles.map((x,i)=>'<div class="event"><div><strong>'+esc(x.number)+'</strong><small>'+esc(x.name||'')+' · '+esc(x.status||'可用')+'</small></div><button class="link vehicle-del" data-i="'+i+'">删除</button></div>').join(''):'<span class="label">暂无车辆资料。</span>')+'</div></div></div>'+
-      '<section class="section"><div class="section-head"><h2>接送任务</h2><span class="pill">'+tasks.length+' 项</span></div><div class="card">'+(tasks.length?tasks.map((x,i)=>'<div class="event"><div class="time">'+esc(x.date||'')+' '+esc(x.time||'')+'</div><div><strong>'+esc(x.studentName||'学生')+' · '+esc(x.from||'起点')+' → '+esc(x.to||'目的地')+'</strong><small>司机：'+esc(x.driverName||'未设置')+' · 车辆：'+esc(x.vehicleNumber||'未设置')+'</small></div><span class="pill">'+esc(x.status||'待确认')+'</span><button class="link transport-del" data-i="'+i+'">删除</button></div>').join(''):'<span class="label">暂无接送任务。</span>')+'</div></section>'+
-      '<div class="grid"><div class="card"><div class="section-head"><h2>临时安排</h2><button class="link" id="addTempBtn">＋ 新增</button></div>'+(temps.length?temps.map((x,i)=>'<div class="item"><span class="tag warn">临时</span> '+esc(x.title)+' <button class="link temp-del" data-i="'+i+'">删除</button></div>').join(''):'<span class="label">暂无临时安排。</span>')+'</div><div class="card"><div class="section-head"><h2>冲突管理</h2><span class="pill">'+conflicts.length+' 项</span></div>'+(conflicts.length?conflicts.map((x,i)=>'<div class="item"><span class="tag danger">冲突</span> '+esc(x.title)+'<br><span class="label">'+esc(x.note||'')+'</span><button class="link conflict-del" data-i="'+i+'">已处理</button></div>').join(''):'<span class="label">目前没有接送冲突。</span>')+'</div></div></section>';
-    document.getElementById('addDriverBtn')?.addEventListener('click',()=>{const name=prompt('司机姓名');if(!name)return;drivers.push({id:'driver_'+Date.now(),name,phone:prompt('联系电话','')||'',role:prompt('角色','主司机')||'主司机'});save(REL,r);renderTransport()});
-    document.getElementById('addVehicleBtn')?.addEventListener('click',()=>{const number=prompt('车辆号码');if(!number)return;vehicles.push({id:'vehicle_'+Date.now(),number,name:prompt('车辆名称','')||'',status:'可用'});save(REL,r);renderTransport()});
-    document.getElementById('addTransportBtn')?.addEventListener('click',()=>{const name=prompt('学生姓名');if(!name)return;const date=prompt('日期','2026-10-03')||'';const time=prompt('时间','17:00')||'';const from=prompt('出发地点','学校')||'';const to=prompt('目的地','家庭')||'';const driverName=prompt('司机','')||'';const vehicleNumber=prompt('车辆号码','')||'';tasks.push({id:'transport_'+Date.now(),studentName:name,date,time,from,to,driverName,vehicleNumber,status:'待确认'});save(REL,r);renderTransport()});
-    document.getElementById('addTempBtn')?.addEventListener('click',()=>{const title=prompt('临时安排');if(!title)return;temps.push({id:'temp_'+Date.now(),title});save(REL,r);renderTransport()});
-    document.querySelectorAll('.driver-del').forEach(b=>b.addEventListener('click',()=>{drivers.splice(+b.dataset.i,1);save(REL,r);renderTransport()}));
-    document.querySelectorAll('.vehicle-del').forEach(b=>b.addEventListener('click',()=>{vehicles.splice(+b.dataset.i,1);save(REL,r);renderTransport()}));
-    document.querySelectorAll('.transport-del').forEach(b=>b.addEventListener('click',()=>{tasks.splice(+b.dataset.i,1);save(REL,r);renderTransport()}));
-    document.querySelectorAll('.temp-del').forEach(b=>b.addEventListener('click',()=>{temps.splice(+b.dataset.i,1);save(REL,r);renderTransport()}));
-    document.querySelectorAll('.conflict-del').forEach(b=>b.addEventListener('click',()=>{conflicts.splice(+b.dataset.i,1);save(REL,r);renderTransport()}));
+    const escT=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    const studentName=id=>ss.find(x=>String(x.id)===String(id))?.name||'未设置学生';
+    const driverName=id=>drivers.find(x=>String(x.id)===String(id))?.name||'未设置司机';
+    const vehicleName=id=>vehicles.find(x=>String(x.id)===String(id))?.number||'未设置车辆';
+    const overlap=(a,b)=>{
+      if(!a||!b||String(a.date)!==String(b.date))return false;
+      const toMin=t=>{const m=String(t||'').match(/^(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null};
+      const am=toMin(a.time),bm=toMin(b.time);if(am===null||bm===null)return false;
+      const ad=Math.max(1,Number(a.duration||1))*60,bd=Math.max(1,Number(b.duration||1))*60;
+      return am<bm+bd&&bm<am+ad;
+    };
+    const migrateTask=x=>{
+      if(!x.id)x.id='transport_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+      if(!x.studentId&&x.studentName){const s=ss.find(z=>String(z.name).trim()===String(x.studentName).trim());if(s)x.studentId=String(s.id);}
+      if(!x.driverId&&x.driverName){const d=drivers.find(z=>String(z.name).trim()===String(x.driverName).trim());if(d)x.driverId=String(d.id);}
+      if(!x.vehicleId&&x.vehicleNumber){const v=vehicles.find(z=>String(z.number).trim()===String(x.vehicleNumber).trim());if(v)x.vehicleId=String(v.id);}
+      x.status=x.status||'待确认';x.duration=Number(x.duration||1);
+      return x;
+    };
+    tasks.forEach(migrateTask);
+    const today=new Date().toISOString().slice(0,10);
+    const autoConflicts=[];
+    tasks.forEach((a,i)=>{
+      tasks.slice(i+1).forEach(b=>{
+        if(!overlap(a,b))return;
+        if(a.driverId&&String(a.driverId)===String(b.driverId))autoConflicts.push({id:'auto_driver_'+a.id+'_'+b.id,type:'司机冲突',severity:'高',date:a.date,time:a.time,studentId:a.studentId||'',relatedIds:[a.id,b.id],status:'待处理',title:driverName(a.driverId)+' 同时有两项接送任务',note:String(a.date||'')+' '+String(a.time||'')});
+        if(a.vehicleId&&String(a.vehicleId)===String(b.vehicleId))autoConflicts.push({id:'auto_vehicle_'+a.id+'_'+b.id,type:'车辆冲突',severity:'高',date:a.date,time:a.time,studentId:a.studentId||'',relatedIds:[a.id,b.id],status:'待处理',title:vehicleName(a.vehicleId)+' 同时安排两项接送',note:String(a.date||'')+' '+String(a.time||'')});
+        if(a.studentId&&String(a.studentId)===String(b.studentId))autoConflicts.push({id:'auto_student_'+a.id+'_'+b.id,type:'学生接送冲突',severity:'中',date:a.date,time:a.time,studentId:a.studentId,relatedIds:[a.id,b.id],status:'待处理',title:studentName(a.studentId)+' 同时有两项接送任务',note:String(a.date||'')+' '+String(a.time||'')});
+      });
+    });
+    (r.lessons||[]).filter(x=>x.status!=='已取消').forEach(l=>{
+      tasks.forEach(t=>{
+        if(String(l.studentId)!==String(t.studentId)||!overlap({date:l.date,time:l.time,duration:l.duration||1},{date:t.date,time:t.time,duration:t.duration||1}))return;
+        autoConflicts.push({id:'auto_lesson_'+t.id+'_'+l.id,type:'课程接送冲突',severity:'高',date:t.date,time:t.time,studentId:t.studentId,relatedIds:[t.id,l.id],status:'待处理',title:studentName(t.studentId)+' 的课程与接送时间重叠',note:String(t.date||'')+' '+String(t.time||'')});
+      });
+    });
+    const autoIds=new Set(autoConflicts.map(x=>x.id));
+    for(let i=conflicts.length-1;i>=0;i--){if(String(conflicts[i].id||'').startsWith('auto_')&&!autoIds.has(conflicts[i].id))conflicts.splice(i,1);}
+    autoConflicts.forEach(x=>{if(!conflicts.some(y=>String(y.id)===String(x.id)))conflicts.push(x);else{const y=conflicts.find(z=>String(z.id)===String(x.id));Object.assign(y,x);}});
+    save(REL,r);
+    const driverRows=drivers.map((x,i)=>'<div class="event"><div><strong>'+escT(x.name)+'</strong><small>'+escT(x.phone||'')+' · '+escT(x.status||'可用')+'</small></div><button class="link driver-del" data-i="'+i+'">停用</button></div>').join('');
+    const vehicleRows=vehicles.map((x,i)=>'<div class="event"><div><strong>'+escT(x.number)+'</strong><small>'+escT(x.name||'车辆')+' · '+escT(x.status||'可用')+'</small></div><button class="link vehicle-del" data-i="'+i+'">停用</button></div>').join('');
+    const taskRows=tasks.slice().sort((a,b)=>(String(a.date)+' '+String(a.time)).localeCompare(String(b.date)+' '+String(b.time))).map((x,i)=>'<div class="event"><div class="time">'+escT(x.date||'')+' '+escT(x.time||'')+'</div><div><strong>'+escT(studentName(x.studentId))+' · '+escT(x.from||'起点')+' → '+escT(x.to||'目的地')+'</strong><small>司机：'+escT(driverName(x.driverId))+' · 车辆：'+escT(vehicleName(x.vehicleId))+' · '+escT(x.status||'待确认')+'</small></div><button class="link transport-del" data-id="'+escT(x.id)+'">删除</button></div>').join('');
+    const tempRows=temps.map((x,i)=>'<div class="item"><span class="tag warn">临时</span> '+escT(x.title||((x.date||'')+' '+(x.time||'')))+' <small>'+escT(studentName(x.studentId))+' · '+escT(x.note||'')+'</small> <button class="link temp-del" data-i="'+i+'">删除</button></div>').join('');
+    const conflictRows=conflicts.filter(x=>x.status!=='已处理').map((x,i)=>'<div class="item"><span class="tag danger">'+escT(x.type||'冲突')+'</span> '+escT(x.title||'接送安排冲突')+'<br><span class="label">'+escT(x.note||'')+'</span> <button class="link conflict-del" data-id="'+escT(x.id)+'">已处理</button></div>').join('');
+    p.innerHTML='<section class="section" style="margin-top:0"><div class="section-head"><div><h2>接送管理</h2><span class="label">学生、司机、车辆、接送任务、临时安排与冲突统一管理；关系以 ID 连接，姓名仅用于显示。</span></div><button class="link" id="addTransportBtn">＋ 新增接送任务</button></div>'+
+      '<div class="cards"><div class="card"><span class="label">今日接送</span><div class="metric">'+tasks.filter(x=>String(x.date)===today).length+'</div></div><div class="card"><span class="label">司机</span><div class="metric">'+drivers.length+'</div></div><div class="card"><span class="label">车辆</span><div class="metric">'+vehicles.length+'</div></div><div class="card"><span class="label">待处理冲突</span><div class="metric">'+conflicts.filter(x=>x.status!=='已处理').length+'</div></div></div>'+
+      '<div class="grid"><div class="card"><div class="section-head"><h2>司机</h2><button class="link" id="addDriverBtn">＋ 新增</button></div><div id="driverList">'+(driverRows||'<span class="label">暂无司机资料。</span>')+'</div></div>'+
+      '<div class="card"><div class="section-head"><h2>车辆</h2><button class="link" id="addVehicleBtn">＋ 新增</button></div><div id="vehicleList">'+(vehicleRows||'<span class="label">暂无车辆资料。</span>')+'</div></div></div>'+
+      '<section class="section"><div class="section-head"><h2>接送任务</h2><span class="pill">'+tasks.length+' 项</span></div><div class="card">'+(taskRows||'<span class="label">暂无接送任务。</span>')+'</div></section>'+
+      '<div class="grid"><div class="card"><div class="section-head"><h2>临时安排</h2><button class="link" id="addTempBtn">＋ 新增</button></div>'+(tempRows||'<span class="label">暂无临时安排。</span>')+'</div><div class="card"><div class="section-head"><h2>冲突管理</h2><span class="pill">'+conflicts.filter(x=>x.status!=='已处理').length+' 项</span></div>'+(conflictRows||'<span class="label">目前没有接送冲突。</span>')+'</div></div></section></section>';
+    document.getElementById('addDriverBtn')?.addEventListener('click',()=>{const name=prompt('司机姓名');if(!name)return;drivers.push({id:'driver_'+Date.now(),name:name.trim(),phone:prompt('联系电话','')||'',note:prompt('备注','')||'',status:'可用'});save(REL,r);renderTransport()});
+    document.getElementById('addVehicleBtn')?.addEventListener('click',()=>{const number=prompt('车辆号码');if(!number)return;vehicles.push({id:'vehicle_'+Date.now(),number:number.trim(),model:prompt('车辆型号','')||'',note:prompt('备注','')||'',status:'可用'});save(REL,r);renderTransport()});
+    document.getElementById('addTransportBtn')?.addEventListener('click',()=>{
+      if(!ss.length){alert('请先建立学生档案。');return;}
+      const names=ss.map((s,i)=>(i+1)+'. '+s.name).join('\\n');const si=Number(prompt('选择学生编号\\n'+names,'1'))-1;const student=ss[si];if(!student)return;
+      const date=prompt('日期','2026-10-03')||'';const time=prompt('时间','17:00')||'';const from=prompt('出发地点','学校')||'';const to=prompt('目的地','家庭')||'';
+      const ds=drivers.length?drivers.map((d,i)=>(i+1)+'. '+d.name).join('\\n'):'无司机资料';const di=drivers.length?Number(prompt('选择司机编号\\n'+ds,'1'))-1:-1;const driver=drivers[di];
+      const vs=vehicles.length?vehicles.map((v,i)=>(i+1)+'. '+v.number).join('\\n'):'无车辆资料';const vi=vehicles.length?Number(prompt('选择车辆编号\\n'+vs,'1'))-1:-1;const vehicle=vehicles[vi];
+      const status=prompt('状态：待确认 / 已确认 / 已完成 / 已取消','待确认')||'待确认';const note=prompt('备注','')||'';
+      tasks.push({id:'transport_'+Date.now(),studentId:String(student.id),driverId:driver?String(driver.id):'',vehicleId:vehicle?String(vehicle.id):'',date,time,from,to,duration:1,status,note});
+      save(REL,r);renderTransport();
+    });
+    document.getElementById('addTempBtn')?.addEventListener('click',()=>{
+      if(!ss.length){alert('请先建立学生档案。');return;}
+      const names=ss.map((s,i)=>(i+1)+'. '+s.name).join('\\n');const si=Number(prompt('选择学生编号\\n'+names,'1'))-1;const student=ss[si];if(!student)return;
+      const date=prompt('日期','2026-10-03')||'';const time=prompt('时间','17:00')||'';const type=prompt('安排类型','临时接送')||'临时接送';const from=prompt('出发地点','')||'';const to=prompt('目的地','')||'';const note=prompt('备注','')||'';
+      const ds=drivers.length?drivers.map((d,i)=>(i+1)+'. '+d.name).join('\\n'):'无司机资料';const di=drivers.length?Number(prompt('选择司机编号\\n'+ds,'1'))-1:-1;const driver=drivers[di];
+      const vs=vehicles.length?vehicles.map((v,i)=>(i+1)+'. '+v.number).join('\\n'):'无车辆资料';const vi=vehicles.length?Number(prompt('选择车辆编号\\n'+vs,'1'))-1:-1;const vehicle=vehicles[vi];
+      temps.push({id:'temp_'+Date.now(),studentId:String(student.id),date,time,type,from,to,driverId:driver?String(driver.id):'',vehicleId:vehicle?String(vehicle.id):'',note,title:type+' · '+student.name});
+      save(REL,r);renderTransport();
+    });
+    document.querySelectorAll('.driver-del').forEach(b=>b.addEventListener('click',()=>{const x=drivers[Number(b.dataset.i)];if(x){x.status='停用';save(REL,r);renderTransport()}}));
+    document.querySelectorAll('.vehicle-del').forEach(b=>b.addEventListener('click',()=>{const x=vehicles[Number(b.dataset.i)];if(x){x.status='停用';save(REL,r);renderTransport()}}));
+    document.querySelectorAll('.transport-del').forEach(b=>b.addEventListener('click',()=>{const x=tasks.find(z=>String(z.id)===String(b.dataset.id));if(x){const idx=tasks.indexOf(x);if(idx>=0)tasks.splice(idx,1);save(REL,r);renderTransport()}}));
+    document.querySelectorAll('.temp-del').forEach(b=>b.addEventListener('click',()=>{temps.splice(Number(b.dataset.i),1);save(REL,r);renderTransport()}));
+    document.querySelectorAll('.conflict-del').forEach(b=>b.addEventListener('click',()=>{const x=conflicts.find(z=>String(z.id)===String(b.dataset.id));if(x)x.status='已处理';save(REL,r);renderTransport()}));
   }
   function renderEducation(){
     const p=document.getElementById('educationPage');if(!p)return;
