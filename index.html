@@ -747,13 +747,32 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
       box.querySelectorAll('button').forEach(btn=>btn.onclick=function(){
         const lid=this.getAttribute('data-lesson-id');const rel=loadEducationRelations();const li=(rel.lessons||[]).findIndex(x=>String(x.id)===String(lid));if(li<0)return;
         const l=rel.lessons[li],pa=(rel.packages||[]).find(x=>String(x.id)===String(l.packageId));const wasDone=l.status==='已完成';
-        const applyStatus=function(next){if(next===l.status)return true;if(pa){if(next==='已完成'&&!wasDone)pa.usedHours=Number(pa.usedHours||0)+Number(l.duration||0);if(wasDone&&next!=='已完成')pa.usedHours=Math.max(0,Number(pa.usedHours||0)-Number(l.duration||0));}l.status=next;return true;};
+        const applyStatus=function(next){
+          if(next===l.status)return true;
+          if(pa){
+            const d=Number(l.duration||0);
+            const used=Number(pa.usedHours||0);
+            if(next==='已完成'&&!wasDone){pa.usedHours=used+d;l.packageDeducted=true;}
+            if(wasDone&&next!=='已完成'){pa.usedHours=Math.max(0,used-d);l.packageDeducted=false;}
+          }
+          l.status=next;return true;
+        };
         if(this.classList.contains('lesson-view')){alert('课程记录\\n日期：'+l.date+'\\n时间：'+l.time+'\\n课时：'+l.duration+' 小时\\n状态：'+(l.status||'已安排')+'\\n老师：'+teacherName(l));return;}
         if(this.classList.contains('lesson-complete')){applyStatus('已完成');l.completedAt=new Date().toISOString();saveEducationRelations(rel);showSubject(id,year,subject);return;}
         if(this.classList.contains('lesson-cancel')){if(!confirm('确定取消这节课程吗？如果课程已经完成，取消后会退回已扣课时。'))return;applyStatus('已取消');l.cancelledAt=new Date().toISOString();saveEducationRelations(rel);showSubject(id,year,subject);return;}
         const nd=prompt('上课日期',l.date);if(nd===null)return;const nt=prompt('上课时间',l.time);if(nt===null)return;const dur=Number(prompt('课时（小时）',l.duration));if(!dur||dur<=0)return;
-        if(this.classList.contains('lesson-correct')){if(wasDone&&pa)pa.usedHours=Math.max(0,Number(pa.usedHours||0)-Number(l.duration||0));l.date=nd;l.time=nt;l.duration=dur;if(wasDone&&pa)pa.usedHours=Number(pa.usedHours||0)+dur;l.correctedAt=new Date().toISOString();}
-        else {if(wasDone&&pa)pa.usedHours=Math.max(0,Number(pa.usedHours||0)-Number(l.duration||0));l.date=nd;l.time=nt;l.duration=dur;if(wasDone&&pa)pa.usedHours=Number(pa.usedHours||0)+dur;l.updatedAt=new Date().toISOString();}
+        const oldDuration=Number(l.duration||0);
+        if(this.classList.contains('lesson-correct')){
+          if(wasDone&&pa)pa.usedHours=Math.max(0,Number(pa.usedHours||0)-oldDuration);
+          l.date=nd;l.time=nt;l.duration=dur;
+          if(wasDone&&pa){pa.usedHours=Number(pa.usedHours||0)+dur;l.packageDeducted=true;}
+          l.correctedAt=new Date().toISOString();
+        }else{
+          if(wasDone&&pa)pa.usedHours=Math.max(0,Number(pa.usedHours||0)-oldDuration);
+          l.date=nd;l.time=nt;l.duration=dur;
+          if(wasDone&&pa){pa.usedHours=Number(pa.usedHours||0)+dur;l.packageDeducted=true;}
+          l.updatedAt=new Date().toISOString();
+        }
         saveEducationRelations(rel);showSubject(id,year,subject);
       });
     }
@@ -767,9 +786,9 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
       const packageId=subjectRec.packageId||'';
       const lesson={id:lessonId,date,time,duration,status,studentId:String(id),academicYearId:yearRec?.id||('academic_'+id+'_'+year),subjectId:subjectKey,teacherId:subjectRec.teacherId||'',courseId:subjectRec.courseId||'',packageId};
       relations.lessons=Array.isArray(relations.lessons)?relations.lessons:[];
-      relations.lessons.push(lesson);
       const pa=relations.packages.find(x=>x.id===packageId);
-      if(status==='已完成'&&pa){pa.usedHours=Number(pa.usedHours||0)+duration;}
+      if(status==='已完成'&&pa){pa.usedHours=Number(pa.usedHours||0)+duration;lesson.packageDeducted=true;}
+      relations.lessons.push(lesson);
       saveEducationRelations(relations);
       alert('上课记录已保存'+(status==='已完成'?'，并已扣除对应课时。':'。'));
       showSubject(id,year,subject);
@@ -777,10 +796,10 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
     renderSubjectLessons();
     const editSubjectTeachingBtn=document.getElementById('editSubjectTeachingBtn');
     if(editSubjectTeachingBtn) editSubjectTeachingBtn.onclick=function(){
-      const teacher=prompt('老师',teacherDisplay==='未设置'?'':teacherDisplay)??teacherDisplay; const course=prompt('课程 / 补习',courseDisplay==='未设置'?'':courseDisplay)??courseDisplay; const pkg=prompt('课时包',packageDisplay==='未设置'?'':packageDisplay)??packageDisplay; const frequency=prompt('上课频率',subjectRec.frequency||'')??subjectRec.frequency||'';
+      const teacher=prompt('老师',teacherDisplay==='未设置'?'':teacherDisplay)??teacherDisplay; const course=prompt('课程 / 补习',courseDisplay==='未设置'?'':courseDisplay)??courseDisplay; const pkg=prompt('课时包',packageDisplay==='未设置'?'':packageDisplay)??packageDisplay; const totalHours=Number(prompt('课时包总课时（小时）',String(pack?.totalHours||20))); const totalAmount=Number(prompt('课时包总金额（新加坡元）',String(pack?.totalAmount||0))); const frequency=prompt('上课频率',subjectRec.frequency||'')??subjectRec.frequency||'';
       const key='educationOS_students',list=JSON.parse(localStorage.getItem(key)||'[]'),idx=list.findIndex(x=>String(x.id)===String(id));
       if(idx<0)return alert('未找到学生档案');
-      const st=list[idx],yrs=Array.isArray(st.academicYears)?st.academicYears:[],pos=yrs.findIndex(r=>String(r.year)===String(year)); const rec=pos>=0?yrs[pos]:{id:'academic_'+id+'_'+year,year:String(year)}; const rid=()=>crypto.randomUUID?crypto.randomUUID():String(Date.now())+'_'+Math.random().toString(36).slice(2); const teacherId=subjectRec.teacherId||('teacher_'+rid()); const courseId=subjectRec.courseId||('course_'+rid()); const packageId=subjectRec.packageId||('package_'+rid()); relations.teachers=Array.isArray(relations.teachers)?relations.teachers:[]; relations.courses=Array.isArray(relations.courses)?relations.courses:[]; relations.packages=Array.isArray(relations.packages)?relations.packages:[]; let tr=relations.teachers.find(x=>x.id===teacherId); if(!tr){tr={id:teacherId,name:teacher};relations.teachers.push(tr)}else tr.name=teacher; let co=relations.courses.find(x=>x.id===courseId); if(!co){co={id:courseId,name:course};relations.courses.push(co)} Object.assign(co,{studentId:String(id),academicYearId:rec?.id||('academic_'+id+'_'+year),subjectId:subjectKey,teacherId,packageId,frequency,name:course}); let pa=relations.packages.find(x=>x.id===packageId); if(!pa){pa={id:packageId,name:pkg,studentId:String(id),academicYearId:rec.id,subjectId:subjectKey,courseId,totalHours:0,usedHours:0};relations.packages.push(pa)}else {pa.name=pkg;pa.studentId=String(id);pa.academicYearId=rec.id;pa.subjectId=subjectKey;pa.courseId=courseId;} saveEducationRelations(relations);
+      const st=list[idx],yrs=Array.isArray(st.academicYears)?st.academicYears:[],pos=yrs.findIndex(r=>String(r.year)===String(year)); const rec=pos>=0?yrs[pos]:{id:'academic_'+id+'_'+year,year:String(year)}; const rid=()=>crypto.randomUUID?crypto.randomUUID():String(Date.now())+'_'+Math.random().toString(36).slice(2); const teacherId=subjectRec.teacherId||('teacher_'+rid()); const courseId=subjectRec.courseId||('course_'+rid()); const packageId=subjectRec.packageId||('package_'+rid()); relations.teachers=Array.isArray(relations.teachers)?relations.teachers:[]; relations.courses=Array.isArray(relations.courses)?relations.courses:[]; relations.packages=Array.isArray(relations.packages)?relations.packages:[]; let tr=relations.teachers.find(x=>x.id===teacherId); if(!tr){tr={id:teacherId,name:teacher};relations.teachers.push(tr)}else tr.name=teacher; let co=relations.courses.find(x=>x.id===courseId); if(!co){co={id:courseId,name:course};relations.courses.push(co)} Object.assign(co,{studentId:String(id),academicYearId:rec?.id||('academic_'+id+'_'+year),subjectId:subjectKey,teacherId,packageId,frequency,name:course}); let pa=relations.packages.find(x=>x.id===packageId); if(!pa){pa={id:packageId,name:pkg,studentId:String(id),academicYearId:rec.id,subjectId:subjectKey,courseId,totalHours:Math.max(0,totalHours||0),usedHours:0,totalAmount:Math.max(0,totalAmount||0)};relations.packages.push(pa)}else {pa.name=pkg;pa.studentId=String(id);pa.academicYearId=rec.id;pa.subjectId=subjectKey;pa.courseId=courseId;if(totalHours>0)pa.totalHours=totalHours;if(totalAmount>=0)pa.totalAmount=totalAmount;} saveEducationRelations(relations);
       rec.subjectRecords=rec.subjectRecords&&typeof rec.subjectRecords==='object'?rec.subjectRecords:{};
       rec.subjectRecords[subjectKey]={...(rec.subjectRecords[subjectKey]||{}),teacher,course,package:pkg,frequency,teacherId,courseId,packageId,updatedAt:new Date().toISOString()};
       if(pos>=0)yrs[pos]=rec;else yrs.push(rec);st.academicYears=yrs;list[idx]=st;localStorage.setItem(key,JSON.stringify(list));
