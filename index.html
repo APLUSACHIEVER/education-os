@@ -1469,8 +1469,9 @@
   function addPackageAlerts(){
     const d=ensure(load()),p=d.packages||[];
     const alerts=p.map(x=>({p:x,r:Math.max(0,Number(x.totalHours||0)-Number(x.usedHours||0))})).filter(x=>x.r<=4);
-    const holder=document.getElementById('eduPackageList');if(holder&&alerts.length){
-      holder.insertAdjacentHTML('afterbegin','<div style="margin-bottom:12px;padding:10px 12px;border-radius:10px;background:var(--surface2);color:var(--amber)">课时包提醒：'+alerts.map(x=>esc(x.p.name||'课时包')+' 剩余 '+x.r+' 小时').join(' · ')+'</div>');
+    const holder=document.getElementById('eduPackageList');if(holder){
+      const old=holder.querySelector('#packageAlertBar'); if(old)old.remove();
+      if(alerts.length)holder.insertAdjacentHTML('afterbegin','<div id="packageAlertBar" style="margin-bottom:12px;padding:10px 12px;border-radius:10px;background:var(--surface2);color:var(--amber)">课时包提醒：'+alerts.map(x=>esc(x.p.name||'课时包')+' 剩余 '+x.r+' 小时').join(' · ')+'</div>');
     }
   }
   function addStudentSubjectDetails(){
@@ -1493,15 +1494,11 @@
     });
   }
   function taskWriteback(){
-    const d=ensure(load());
-    const tasks=d.tasks||[];
-    tasks.forEach(t=>{
-      if(t.feedbackId){
-        const f=d.feedbacks.find(x=>String(x.id)===String(t.feedbackId));
-        if(f&&t.status==='已完成')f.status='已处理';
-      }
+    const d=ensure(load()); let changed=false;
+    (d.tasks||[]).forEach(t=>{
+      if(t.feedbackId){const f=d.feedbacks.find(x=>String(x.id)===String(t.feedbackId)); if(f&&t.status==='已完成'&&f.status!=='已处理'){f.status='已处理';changed=true;}}
     });
-    save(d);
+    if(changed){save(d);notify();}
   }
   document.addEventListener('click',e=>{
     const b=e.target.closest('[data-plan-edit]');if(b){editPlanned(b.dataset.planEdit);return;}
