@@ -1832,7 +1832,7 @@ function renderClosure(){
  if(home){
    let box=document.getElementById('osLiveHome');if(!box){box=document.createElement('section');box.id='osLiveHome';box.className='section';home.prepend(box);}
    box.innerHTML='<div class="os-closure"><div class="os-closure-head"><h3>家庭实时闭环</h3><span class="label">数据来自课程、接送、任务、反馈、费用、冲突与学业记录</span></div><div class="os-live-grid">'+
-   [['今日课程',d.todayLessons.length,'家庭日程'],['今日接送',d.todayTransport.length,'接送管理'],['待处理',d.pendingTasks.length+d.pendingConf.length,'待处理'],['本月费用','</html>+d.monthSpend.toFixed(2),'家庭费用'],['待教师反馈',d.pendingFeedback.length,'教育管理'],['接送待执行',d.pendingTransport.length,'接送管理'],['课时包预警',d.packageWarn.length,'教育管理'],['学业记录',d.prog.length,'学业管理']].map(a=>'<div class="os-live-card" data-os-page="'+a[2]+'"><span class="label">'+a[0]+'</span><div class="n">'+a[1]+'</div><div class="s">点击查看</div></div>').join('')+'</div></div>';
+   [['今日课程',d.todayLessons.length,'家庭日程'],['今日接送',d.todayTransport.length,'接送管理'],['待处理',d.pendingTasks.length+d.pendingConf.length,'待处理'],['本月费用','$'+d.monthSpend.toFixed(2),'家庭费用'],['待教师反馈',d.pendingFeedback.length,'教育管理'],['接送待执行',d.pendingTransport.length,'接送管理'],['课时包预警',d.packageWarn.length,'教育管理'],['学业记录',d.prog.length,'学业管理']].map(a=>'<div class="os-live-card" data-os-page="'+a[2]+'"><span class="label">'+a[0]+'</span><div class="n">'+a[1]+'</div><div class="s">点击查看</div></div>').join('')+'</div></div>';
  }
  const pending=document.getElementById('pendingPage');
  if(pending){
@@ -1851,7 +1851,7 @@ function renderClosure(){
    const completed=d.ls.filter(x=>x.status==='已完成').length;
    const paid=d.p.filter(x=>x.status!=='已取消').reduce((n,x)=>n+Number(x.amount||0),0);
    box.innerHTML='<div class="os-closure"><div class="os-closure-head"><h3>家庭实时总览</h3><span class="label">所有指标直接读取统一家庭数据</span></div><div class="os-live-grid">'+
-   [['学生',d.ss.length,'学生完整档案'],['课程完成',completed,'家庭日程'],['接送任务',d.ts.length,'接送管理'],['未处理冲突',d.pendingConf.length,'待处理'],['待执行任务',d.pendingTasks.length,'任务'],['教师反馈待跟进',d.pendingFeedback.length,'教育管理'],['本月费用','</html>+d.monthSpend.toFixed(2),'家庭费用'],['累计费用','</html>+paid.toFixed(2),'家庭费用']].map(a=>'<div class="os-live-card" data-os-page="'+a[2]+'"><span class="label">'+a[0]+'</span><div class="n">'+a[1]+'</div><div class="s">点击进入</div></div>').join('')+'</div></div>';
+   [['学生',d.ss.length,'学生完整档案'],['课程完成',completed,'家庭日程'],['接送任务',d.ts.length,'接送管理'],['未处理冲突',d.pendingConf.length,'待处理'],['待执行任务',d.pendingTasks.length,'任务'],['教师反馈待跟进',d.pendingFeedback.length,'教育管理'],['本月费用','$'+d.monthSpend.toFixed(2),'家庭费用'],['累计费用','$'+paid.toFixed(2),'家庭费用']].map(a=>'<div class="os-live-card" data-os-page="'+a[2]+'"><span class="label">'+a[0]+'</span><div class="n">'+a[1]+'</div><div class="s">点击进入</div></div>').join('')+'</div></div>';
  }
 }
 function ensureTimeline(){
