@@ -1720,7 +1720,8 @@
  }
  document.addEventListener('click',e=>{const p=e.target.closest('[data-payment-id]');if(p){e.preventDefault();showPayment(p.dataset.paymentId);}});
  window.addEventListener('educationOS:changed',()=>{setTimeout(()=>{renderPayments();dashboardLinks()},60)});
- const mo=new MutationObserver(()=>{renderPayments();dashboardLinks()});mo.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['style']});
+ window.addEventListener('educationOS:changed',()=>setTimeout(()=>{renderPayments();dashboardLinks()},80));
+ setInterval(()=>{renderPayments();dashboardLinks()},5000);
  setTimeout(()=>{renderPayments();dashboardLinks()},500);
 })();
 </script>
