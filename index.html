@@ -626,14 +626,35 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
       '<section class="section" style="margin-top:0"><div class="section-head"><h2>一、科目基本资料</h2><span class="pill">'+escSubject(year)+' · '+escSubject(subject)+'</span></div><div class="card"><div class="two">'+
       [['学生',s.name],['学年',year],['年级',yearGrade],['学校',yearSchool],['学段',stageName],['学习路径',yearPath]].map(x=>'<div class="finance-row"><span>'+escSubject(x[0])+'</span><b>'+escSubject(x[1])+'</b></div>').join('')+'</div></div></section>'+
       '<section class="section"><div class="section-head"><h2>二、老师与课程</h2><button class="link" id="addLessonBtn">＋ 记录上课</button></div><div class="two"><div><div class="card"><div class="section-head"><h2>老师与课程</h2><button class="link" id="editSubjectTeachingBtn">✎ 编辑</button></div>'+[['老师',teacherDisplay],['课程 / 补习',courseDisplay],['课时包',packageDisplay],['总课时',packageTotal?packageTotal+' 小时':'未设置'],['已使用',packageTotal?packageUsed+' 小时':'未设置'],['剩余',packageTotal?packageRemaining+' 小时':'未设置'],['上课频率',subjectRec.frequency||'未设置']].map(x=>'<div class="finance-row"><span>'+x[0]+'</span><b>'+escSubject(x[1])+'</b></div>').join('')+'</div></div><div><div class="section-head"><h2>三、学习目标</h2></div><div class="card">'+[['年度目标',yearGoal],['科目目标','待建立'],['阶段目标','待建立'],['下一步','待建立']].map(x=>'<div class="finance-row"><span>'+x[0]+'</span><b>'+escSubject(x[1])+'</b></div>').join('')+'</div></div></div></section>'+ 
-      '<section class="section"><div class="two"><div><div class="section-head"><h2>四、学习进度</h2></div><div class="card">'+[['当前水平','待建立'],['本学期进度','待建立'],['掌握情况','待建立'],['需要加强','待建立']].map(x=>'<div class="finance-row"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')+'</div></div><div><div class="section-head"><h2>五、测验 / 考试与成绩</h2></div><div class="card">'+[['最近测验','待建立'],['学校考试','待建立'],['成绩趋势','待建立'],['目标成绩','待建立']].map(x=>'<div class="finance-row"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')+'</div></div></div></section>'+
-      '<section class="section"><div class="two"><div><div class="section-head"><h2>六、教师反馈</h2></div><div class="card"><span class="label">尚未建立该科目教师反馈。</span></div></div><div><div class="section-head"><h2>七、学习问题 / 薄弱点</h2></div><div class="card"><span class="label">可记录错题、薄弱知识点、学习习惯与需要跟进的问题。</span></div></div></div></section>'+
-      '<section class="section"><div class="section-head"><h2>八、家庭日程连接</h2><span class="label">科目记录进入家庭日程</span></div><div class="card">'+[['课程','自动进入家庭日程'],['测验 / 考试','自动进入家庭日程'],['补习','连接接送管理'],['临时安排','可记录课程变化']].map(x=>'<div class="finance-row"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')+'</div></section>'+
-      '<section class="section"><div class="section-head"><h2>九、科目备注</h2></div><div class="card"><span class="label">暂未填写。</span></div></section>';
+      '<section class="section"><div class="section-head"><h2>四、课程记录</h2><span class="label">所有实际课程统一从这里管理</span></div><div class="card" id="subjectLessonRecords"></div></section><section class="section"><div class="two"><div><div class="section-head"><h2>六、学习进度</h2></div><div class="card">'+[['当前水平','待建立'],['本学期进度','待建立'],['掌握情况','待建立'],['需要加强','待建立']].map(x=>'<div class="finance-row"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')+'</div></div><div><div class="section-head"><h2>五、测验 / 考试与成绩</h2></div><div class="card">'+[['最近测验','待建立'],['学校考试','待建立'],['成绩趋势','待建立'],['目标成绩','待建立']].map(x=>'<div class="finance-row"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')+'</div></div></div></section>'+
+      '<section class="section"><div class="two"><div><div class="section-head"><h2>七、教师反馈</h2></div><div class="card"><span class="label">尚未建立该科目教师反馈。</span></div></div><div><div class="section-head"><h2>七、学习问题 / 薄弱点</h2></div><div class="card"><span class="label">可记录错题、薄弱知识点、学习习惯与需要跟进的问题。</span></div></div></div></section>'+
+      '<section class="section"><div class="section-head"><h2>九、家庭日程连接</h2><span class="label">科目记录进入家庭日程</span></div><div class="card">'+[['课程','自动进入家庭日程'],['测验 / 考试','自动进入家庭日程'],['补习','连接接送管理'],['临时安排','可记录课程变化']].map(x=>'<div class="finance-row"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')+'</div></section>'+
+      '<section class="section"><div class="section-head"><h2>十、科目备注</h2></div><div class="card"><span class="label">暂未填写。</span></div></section>';
     hideAll();p.style.display='block';
     const title=document.getElementById('pageTitle'),sub=document.getElementById('pageSub');if(title)title.textContent='科目档案';if(sub)sub.textContent=s.name+' · '+year+' · '+subject;
     const nav=document.querySelectorAll('.nav button');nav.forEach(x=>x.classList.remove('active'));
     const child=document.querySelector('.nav button[data-page="学生完整档案"]');if(child)child.classList.add('active');
+    function renderSubjectLessons(){
+      const box=document.getElementById('subjectLessonRecords');if(!box)return;
+      relations=loadEducationRelations();
+      const lessons=(relations.lessons||[]).filter(l=>String(l.studentId)===String(id)&&String(l.academicYearId)===String(yearRec?.id||('academic_'+id+'_'+year))&&String(l.subjectId)===subjectKey).sort((a,b)=>(String(b.date)+' '+String(b.time)).localeCompare(String(a.date)+' '+String(a.time)));
+      const teacherName=l=>((relations.teachers||[]).find(t=>String(t.id)===String(l.teacherId))||{}).name||'老师未设置';
+      const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+      if(!lessons.length){box.innerHTML='<span class="label">尚未建立课程记录。点击「＋ 记录上课」建立第一节课程。</span>';return;}
+      box.innerHTML=lessons.map(l=>'<div class="item" style="border-bottom:1px solid var(--border);padding:12px 0"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><b>'+esc(l.date)+' '+esc(l.time)+'</b> · '+esc(l.duration)+' 小时</div><span class="pill">'+esc(l.status||'已安排')+'</span></div><div class="label" style="margin-top:5px">'+esc(teacherName(l))+'</div><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="link lesson-view" data-lesson-id="'+esc(l.id)+'">查看</button><button class="link lesson-edit" data-lesson-id="'+esc(l.id)+'">修改</button><button class="link lesson-complete" data-lesson-id="'+esc(l.id)+'">完成</button><button class="link lesson-cancel" data-lesson-id="'+esc(l.id)+'">取消</button><button class="link lesson-correct" data-lesson-id="'+esc(l.id)+'">更正</button></div></div>').join('');
+      box.querySelectorAll('button').forEach(btn=>btn.onclick=function(){
+        const lid=this.getAttribute('data-lesson-id');const rel=loadEducationRelations();const li=(rel.lessons||[]).findIndex(x=>String(x.id)===String(lid));if(li<0)return;
+        const l=rel.lessons[li],pa=(rel.packages||[]).find(x=>String(x.id)===String(l.packageId));const wasDone=l.status==='已完成';
+        const applyStatus=function(next){if(next===l.status)return true;if(pa){if(next==='已完成'&&!wasDone)pa.usedHours=Number(pa.usedHours||0)+Number(l.duration||0);if(wasDone&&next!=='已完成')pa.usedHours=Math.max(0,Number(pa.usedHours||0)-Number(l.duration||0));}l.status=next;return true;};
+        if(this.classList.contains('lesson-view')){alert('课程记录\\n日期：'+l.date+'\\n时间：'+l.time+'\\n课时：'+l.duration+' 小时\\n状态：'+(l.status||'已安排')+'\\n老师：'+teacherName(l));return;}
+        if(this.classList.contains('lesson-complete')){applyStatus('已完成');l.completedAt=new Date().toISOString();saveEducationRelations(rel);showSubject(id,year,subject);return;}
+        if(this.classList.contains('lesson-cancel')){if(!confirm('确定取消这节课程吗？如果课程已经完成，取消后会退回已扣课时。'))return;applyStatus('已取消');l.cancelledAt=new Date().toISOString();saveEducationRelations(rel);showSubject(id,year,subject);return;}
+        const nd=prompt('上课日期',l.date);if(nd===null)return;const nt=prompt('上课时间',l.time);if(nt===null)return;const dur=Number(prompt('课时（小时）',l.duration));if(!dur||dur<=0)return;
+        if(this.classList.contains('lesson-correct')){if(wasDone&&pa)pa.usedHours=Math.max(0,Number(pa.usedHours||0)-Number(l.duration||0));l.date=nd;l.time=nt;l.duration=dur;if(wasDone&&pa)pa.usedHours=Number(pa.usedHours||0)+dur;l.correctedAt=new Date().toISOString();}
+        else {l.date=nd;l.time=nt;l.duration=dur;}
+        saveEducationRelations(rel);showSubject(id,year,subject);
+      });
+    }
     const addLessonBtn=document.getElementById('addLessonBtn');
     if(addLessonBtn) addLessonBtn.onclick=function(){
       const date=prompt('上课日期（例如 2026-10-03）',new Date().toISOString().slice(0,10)); if(!date)return;
@@ -651,6 +672,7 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
       alert('上课记录已保存'+(status==='已完成'?'，并已扣除对应课时。':'。'));
       showSubject(id,year,subject);
     };
+    renderSubjectLessons();
     const editSubjectTeachingBtn=document.getElementById('editSubjectTeachingBtn');
     if(editSubjectTeachingBtn) editSubjectTeachingBtn.onclick=function(){
       const teacher=prompt('老师',teacherDisplay==='未设置'?'':teacherDisplay)??teacherDisplay; const course=prompt('课程 / 补习',courseDisplay==='未设置'?'':courseDisplay)??courseDisplay; const pkg=prompt('课时包',packageDisplay==='未设置'?'':packageDisplay)??packageDisplay; const frequency=prompt('上课频率',subjectRec.frequency||'')??subjectRec.frequency||'';
