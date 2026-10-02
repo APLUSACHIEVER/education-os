@@ -197,7 +197,7 @@
 <div class="finance-row"><span>小学</span><b>P1 · P2 · P3 · P4 · P5 · P6</b></div>
 <div class="finance-row"><span>中学</span><b>S1 · S2 · S3 · S4</b></div>
 <div class="finance-row"><span>JC</span><b>JC1 · JC2</b></div>
-<div style="margin-top:12px;padding:12px;border-radius:10px;background:var(--surface2);color:var(--muted);font-size:13px">教育管家不建立 MI、Polytechnic、ITE 或大学的完整学科 Master。</div>
+<div style="margin-top:12px;padding:12px;border-radius:10px;background:var(--surface2);color:var(--muted);font-size:13px">教育管家目前只管理小学、中学与初级学院。</div>
 </div></section>
 <section class="section"><div class="section-head"><h2>二、小学学科 Master</h2><span class="pill">P1–P6</span></div><div class="card">
 <div class="finance-row"><span>P1–P2 核心</span><b>英语 · 母语 · 数学</b></div>
@@ -436,7 +436,7 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
  const options={Primary:{grades:['Primary 1','Primary 2','Primary 3','Primary 4','Primary 5','Primary 6'],paths:['小学普通课程']},Secondary:{grades:['Secondary 1','Secondary 2','Secondary 3','Secondary 4'],paths:['IP','Mainstream PG 3','Mainstream PG 2','Mainstream PG 1']},JC:{grades:['JC 1','JC 2'],paths:['JC']}};
  const esc=v=>String(v||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
  function read(){try{return JSON.parse(localStorage.getItem('educationOS_students')||'[]')}catch(e){return[]}}
- function refresh(){const d=options[stage.value];grade.innerHTML=d.grades.map(x=>'<option>'+x+'</option>').join('');path.innerHTML=d.paths.map(x=>'<option>'+x+'</option>').join('');note.textContent=stage.value==='Secondary'?'中学路径按学生实际 Programme 记录；Mainstream 可选择 PG 3、PG 2、PG 1。':stage.value==='Primary'?'小学按 Primary 1–6 记录。':stage.value==='JC'?'初级学院按 JC 1–2 记录。':'励仁高级中学按 MI 1–3 记录。'}
+ function refresh(){const d=options[stage.value];grade.innerHTML=d.grades.map(x=>'<option>'+x+'</option>').join('');path.innerHTML=d.paths.map(x=>'<option>'+x+'</option>').join('');note.textContent=stage.value==='Secondary'?'中学路径按学生实际 Programme 记录；Mainstream 可选择 PG 3、PG 2、PG 1。':stage.value==='Primary'?'小学按 Primary 1–6 记录。':stage.value==='JC'?'初级学院按 JC 1–2 记录。':'中学按 S1–S4 记录。'}
  function render(){
    if(!cards)return;
    const list=read();
