@@ -1776,7 +1776,7 @@ function syncConflicts(){
  }
  const dedup=[];const seen=new Set();
  [...manual,...autos].forEach(x=>{const k=String(x.id);if(!seen.has(k)){seen.add(k);dedup.push(x)}});
- r.conflicts=dedup;save(r);
+ const before=JSON.stringify(r.conflicts||[]),after=JSON.stringify(dedup);if(before!==after){r.conflicts=dedup;save(r);}
 }
 function liveData(){
  const r=load(),ss=students(),ls=r.lessons||[],ts=r.transportTasks||[],tasks=r.tasks||[],f=r.feedbacks||[],p=r.payments||[],pk=r.packages||[],conf=r.conflicts||[],prog=r.progressRecords||[],goals=r.academicGoals||[];
