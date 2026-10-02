@@ -914,7 +914,13 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
     const pending=[...(r.conflicts||[]).filter(x=>x.status!=='已处理').map(x=>({type:'冲突',title:x.title,note:x.note})),...(r.tasks||[]).filter(x=>x.status!=='已完成').map(x=>({type:'任务',title:x.title,note:x.due||''})),...(r.transportTasks||[]).filter(x=>x.status!=='已完成'&&x.status!=='已取消').map(x=>({type:'接送',title:(allStudents().find(s=>String(s.id)===String(x.studentId))?.name||'学生')+' · 接送任务待确认',note:(x.date||'')+' '+(x.time||'')}))];
     page('pendingPage','待处理','系统汇总尚未解决的任务、冲突与需要确认的事项。','<div class="cards"><div class="card"><span class="label">待处理事项</span><div class="metric">'+pending.length+'</div></div><div class="card"><span class="label">接送冲突</span><div class="metric">'+(r.conflicts||[]).length+'</div></div></div><div class="card">'+(pending.length?pending.map(x=>'<div class="item"><span class="tag '+(x.type==='冲突'?'danger':'warn')+'">'+esc(x.type)+'</span> '+esc(x.title)+'<br><span class="label">'+esc(x.note||'')+'</span></div>').join(''):'<span class="label">目前没有待处理事项。</span>')+'</div>');
     const lessons=r.lessons||[], completed=lessons.filter(x=>x.status==='已完成').length;
-    page('familyReportPage','家庭报告','从现有学生、课程、课时与日程数据汇总，不另建重复数据。','<div class="cards"><div class="card"><span class="label">学生</span><div class="metric">'+ss.length+'</div></div><div class="card"><span class="label">课程记录</span><div class="metric">'+lessons.length+'</div></div><div class="card"><span class="label">已完成课程</span><div class="metric">'+completed+'</div></div><div class="card"><span class="label">老师</span><div class="metric">'+(r.teachers||[]).length+'</div></div></div><div class="grid"><div class="card"><h2>教育服务概览</h2><div class="finance-row"><span>课程</span><b>'+(r.courses||[]).length+' 项</b></div><div class="finance-row"><span>课时包</span><b>'+(r.packages||[]).length+' 个</b></div><div class="finance-row"><span>接送任务</span><b>'+taskRows.length+' 项</b></div></div><div class="card"><h2>报告说明</h2><span class="label">后续成绩、学习进度、教师反馈、费用与接送数据都会从各自模块汇总到家庭报告，不重复录入。</span></div></div>');
+    const payments=Array.isArray(r.payments)?r.payments:[], month=new Date().toISOString().slice(0,7);
+    const monthPayments=payments.filter(x=>String(x.date||'').slice(0,7)===month), transportFees=monthPayments.filter(x=>x.category==='接送').reduce((n,x)=>n+Number(x.amount||0),0);
+
+    page('familyReportPage','家庭报告','从现有学生、课程、课时与日程数据汇总，不另建重复数据。','<div class="cards"><div class="card"><span class="label">学生</span><div class="metric">'+ss.length+'</div></div><div class="card"><span class="label">课程记录</span><div class="metric">'+lessons.length+'</div></div><div class="card"><span class="label">已完成课程</span><div class="metric">'+completed+'</div></div><div class="card"><span class="label">老师</span><div class="metric">'+(r.teachers||[]).length+'</div></div></div><div class="grid"><div class="card"><h2>教育服务概览</h2><div class="finance-row"><span>课程</span><b>'+(r.courses||[]).length+' 项</b></div><div class="finance-row"><span>课时包</span><b>'+(r.packages||[]).length+' 个</b></div><div class="finance-row"><span>接送任务</span><b>'+taskRows.length+' 项</b></div><div class="finance-row"><span>本月接送费用</span><b><div class="card"><h2>报告说明</h2><span class="label">后续成绩、学习进度、教师反馈、费用与接送数据都会从各自模块汇总到家庭报告，不重复录入。</span></div></div>');
+    bindManagementActions();
+  }
++transportFees.toFixed(2)+'</b></div></div><div class="card"><h2>报告说明</h2><span class="label">后续成绩、学习进度、教师反馈、费用与接送数据都会从各自模块汇总到家庭报告，不重复录入。</span></div></div>');
     bindManagementActions();
   }
   function bindManagementActions(){
@@ -972,7 +978,7 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
     const taskRows=tasks.slice().sort((a,b)=>(String(a.date)+' '+String(a.time)).localeCompare(String(b.date)+' '+String(b.time))).map((x,i)=>'<div class="event"><div class="time">'+escT(x.date||'')+' '+escT(x.time||'')+'</div><div><strong>'+escT(studentName(x.studentId))+' · '+escT(x.from||'起点')+' → '+escT(x.to||'目的地')+'</strong><small>司机：'+escT(driverName(x.driverId))+' · 车辆：'+escT(vehicleName(x.vehicleId))+' · '+escT(x.status||'待确认')+'</small></div><button class="link transport-del" data-id="'+escT(x.id)+'">删除</button></div>').join('');
     const tempRows=temps.map((x,i)=>'<div class="item"><span class="tag warn">临时</span> '+escT(x.title||((x.date||'')+' '+(x.time||'')))+' <small>'+escT(studentName(x.studentId))+' · '+escT(x.note||'')+'</small> <button class="link temp-del" data-i="'+i+'">删除</button></div>').join('');
     const conflictRows=conflicts.filter(x=>x.status!=='已处理').map((x,i)=>'<div class="item"><span class="tag danger">'+escT(x.type||'冲突')+'</span> '+escT(x.title||'接送安排冲突')+'<br><span class="label">'+escT(x.note||'')+'</span> <button class="link conflict-del" data-id="'+escT(x.id)+'">已处理</button></div>').join('');
-    p.innerHTML='<section class="section" style="margin-top:0"><div class="section-head"><div><h2>接送管理</h2><span class="label">学生、司机、车辆、接送任务、临时安排与冲突统一管理；关系以 ID 连接，姓名仅用于显示。</span></div><button class="link" id="addTransportBtn">＋ 新增接送任务</button></div>'+
+    p.innerHTML='<section class="section" style="margin-top:0"><div class="section-head"><div><h2>接送管理</h2><span class="label">学生、司机、车辆、接送任务、临时安排与冲突统一管理；关系以 ID 连接，姓名仅用于显示。</span></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="link" id="addTransportBtn">＋ 新增接送任务</button><button class="link" id="addTransportFeeBtn">＋ 记录接送费用</button></div></div>'+
       '<div class="cards"><div class="card"><span class="label">今日接送</span><div class="metric">'+tasks.filter(x=>String(x.date)===today).length+'</div></div><div class="card"><span class="label">司机</span><div class="metric">'+drivers.length+'</div></div><div class="card"><span class="label">车辆</span><div class="metric">'+vehicles.length+'</div></div><div class="card"><span class="label">待处理冲突</span><div class="metric">'+conflicts.filter(x=>x.status!=='已处理').length+'</div></div></div>'+
       '<div class="grid"><div class="card"><div class="section-head"><h2>司机</h2><button class="link" id="addDriverBtn">＋ 新增</button></div><div id="driverList">'+(driverRows||'<span class="label">暂无司机资料。</span>')+'</div></div>'+
       '<div class="card"><div class="section-head"><h2>车辆</h2><button class="link" id="addVehicleBtn">＋ 新增</button></div><div id="vehicleList">'+(vehicleRows||'<span class="label">暂无车辆资料。</span>')+'</div></div></div>'+
@@ -980,6 +986,21 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
       '<div class="grid"><div class="card"><div class="section-head"><h2>临时安排</h2><button class="link" id="addTempBtn">＋ 新增</button></div>'+(tempRows||'<span class="label">暂无临时安排。</span>')+'</div><div class="card"><div class="section-head"><h2>冲突管理</h2><span class="pill">'+conflicts.filter(x=>x.status!=='已处理').length+' 项</span></div>'+(conflictRows||'<span class="label">目前没有接送冲突。</span>')+'</div></div></section></section>';
     document.getElementById('addDriverBtn')?.addEventListener('click',()=>{const name=prompt('司机姓名');if(!name)return;drivers.push({id:'driver_'+Date.now(),name:name.trim(),phone:prompt('联系电话','')||'',note:prompt('备注','')||'',status:'可用'});save(REL,r);renderTransport()});
     document.getElementById('addVehicleBtn')?.addEventListener('click',()=>{const number=prompt('车辆号码');if(!number)return;vehicles.push({id:'vehicle_'+Date.now(),number:number.trim(),model:prompt('车辆型号','')||'',note:prompt('备注','')||'',status:'可用'});save(REL,r);renderTransport()});
+    document.getElementById('addTransportFeeBtn')?.addEventListener('click',()=>{
+      if(!ss.length){alert('请先建立学生档案。');return;}
+      const names=ss.map((s,i)=>(i+1)+'. '+s.name).join('\\n');const si=Number(prompt('选择学生编号\\n'+names,'1'))-1;const student=ss[si];if(!student)return;
+      const taskId=prompt('关联接送任务 ID（可留空）','')||'';
+      const description=prompt('费用说明','接送服务费')||'接送服务费';
+      const amount=Number(prompt('金额（新加坡元）','0'));if(!amount||amount<0)return;
+      const date=prompt('费用日期（YYYY-MM-DD）',new Date().toISOString().slice(0,10));if(!date)return;
+      const status=prompt('状态：已支付 / 待支付 / 已取消','待支付')||'待支付';
+      const task=tasks.find(x=>String(x.id)===String(taskId));
+      r.payments=Array.isArray(r.payments)?r.payments:[];
+      r.payments.push({id:'payment_'+(crypto.randomUUID?crypto.randomUUID():Date.now()),studentId:String(student.id),academicYearId:feeAcademicYear(student.id,date),category:'接送',description,amount,date,status,transportTaskId:task?.id||''});
+      save(REL,r);renderTransport();
+      if(typeof renderFees==='function')renderFees();
+      alert('接送费用已保存，并已进入统一家庭费用记录。');
+    });
     document.getElementById('addTransportBtn')?.addEventListener('click',()=>{
       if(!ss.length){alert('请先建立学生档案。');return;}
       const names=ss.map((s,i)=>(i+1)+'. '+s.name).join('\\n');const si=Number(prompt('选择学生编号\\n'+names,'1'))-1;const student=ss[si];if(!student)return;
