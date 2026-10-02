@@ -931,9 +931,25 @@
     if(finance)finance.innerHTML='<div class="finance-row"><span>补习费用</span><b>$'+tuition.toFixed(2)+'</b></div><div class="finance-row"><span>活动费用</span><b>$'+activity.toFixed(2)+'</b></div><div class="finance-row"><span>接送费用</span><b>$'+transportFee.toFixed(2)+'</b></div><div class="finance-row"><span>本月合计</span><b>$'+monthTotal.toFixed(2)+'</b></div>';
   }
   function observe(){
-    const ids=['dashboard','familySchedule','educationPage','academicPage','transportPage','familyAffairsPage','tasksPage','pendingPage','familyReportPage'];
-    const obs=new MutationObserver(()=>{ids.forEach(id=>{const e=document.getElementById(id);if(e&&getComputedStyle(e).display!=='none'){if(id==='dashboard')renderDashboard();if(id==='familySchedule')renderFamilySchedule();if(id==='educationPage')renderEducation();if(id==='academicPage')renderAcademic();if(id==='transportPage')renderTransport();if(['familyAffairsPage','tasksPage','pendingPage','familyReportPage'].includes(id))renderManagementPages()}})});
-    ids.forEach(id=>{const e=document.getElementById(id);if(e)obs.observe(e,{attributes:true,attributeFilter:['style']})});
+    const refreshVisible=()=>{
+      const map={
+        dashboard:renderDashboard,
+        familySchedule:renderFamilySchedule,
+        educationPage:renderEducation,
+        academicPage:renderAcademic,
+        transportPage:renderTransport,
+        familyAffairsPage:renderManagementPages,
+        tasksPage:renderManagementPages,
+        pendingPage:renderManagementPages,
+        familyReportPage:renderManagementPages
+      };
+      Object.keys(map).forEach(id=>{
+        const e=document.getElementById(id);
+        if(e&&getComputedStyle(e).display!=='none') map[id]();
+      });
+    };
+    window.addEventListener('educationOS:changed',()=>setTimeout(refreshVisible,50));
+    setInterval(refreshVisible,5000);
   }
   function init(){ensureStore();renderManagementPages();renderDashboard();renderFamilySchedule();renderEducation();renderAcademic();renderTransport();observe()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
