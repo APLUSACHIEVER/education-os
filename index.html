@@ -75,6 +75,14 @@
     </section>
   </section>
 
+    <section id="eduCourseDetailPanel" class="section" style="display:none">
+      <div class="section-head">
+        <div><h2>课程详情</h2><span class="label" id="eduDetailSubtitle">课程记录</span></div>
+        <button class="link" id="eduCloseDetail">← 返回课程列表</button>
+      </div>
+      <div id="eduCourseDetail"></div>
+    </section>
+
   <section id="eduTeachersPanel" style="display:none">
     <section class="section" style="margin-top:0"><div class="section-head"><h2>老师</h2><button class="primary" id="eduAddTeacher">＋ 新增老师</button></div><div class="card"><div id="eduTeacherList"></div></div></section>
   </section>
@@ -1110,6 +1118,149 @@
     render();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+
+<script>
+/* 教育管理增强：课程详情、实际上课记录、自动扣课时、教师反馈。 */
+(function(){
+  const KEY='educationOS_relations';
+  const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const load=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return{}}};
+  const save=d=>localStorage.setItem(KEY,JSON.stringify(d));
+  const students=()=>{try{return JSON.parse(localStorage.getItem('educationOS_students')||'[]')}catch(e){return[]}};
+  const uid=p=>p+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  const text=(label,val)=>{const v=prompt(label,val==null?'':String(val));return v===null?null:v.trim()};
+  let currentId='';
+
+  function ensure(d){
+    if(!Array.isArray(d.courses))d.courses=[];
+    if(!Array.isArray(d.lessons))d.lessons=[];
+    if(!Array.isArray(d.feedbacks))d.feedbacks=[];
+    if(!Array.isArray(d.packages))d.packages=[];
+    if(!Array.isArray(d.teachers))d.teachers=[];
+    return d;
+  }
+  function names(d,c){
+    const s=students().find(x=>String(x.id)===String(c.studentId));
+    const t=(d.teachers||[]).find(x=>String(x.id)===String(c.teacherId));
+    const p=(d.packages||[]).find(x=>String(x.id)===String(c.packageId));
+    return {s,t,p};
+  }
+  function showDetail(cid){
+    const d=ensure(load()),c=d.courses.find(x=>String(x.id)===String(cid));if(!c)return;
+    currentId=cid;
+    document.getElementById('eduCoursesPanel').style.display='none';
+    document.getElementById('eduCourseDetailPanel').style.display='block';
+    renderDetail(c,d);
+    document.getElementById('eduCourseDetailPanel').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  function renderDetail(c,d){
+    const n=names(d,c), lessons=d.lessons.filter(x=>String(x.courseId)===String(c.id)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+    const feedbacks=d.feedbacks.filter(x=>String(x.courseId)===String(c.id)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+    const completed=lessons.filter(x=>x.status==='已完成').length;
+    const remain=n.p?Math.max(0,Number(n.p.totalHours||0)-Number(n.p.usedHours||0)):null;
+    document.getElementById('eduDetailSubtitle').textContent=(n.s?.name||'学生')+' · '+(c.subject||'未设置科目')+' · '+(c.name||'未命名课程');
+    document.getElementById('eduCourseDetail').innerHTML=
+      '<div class="cards">'+
+      '<div class="card"><span class="label">课程状态</span><div class="metric" style="font-size:22px">'+esc(c.status||'已安排')+'</div></div>'+
+      '<div class="card"><span class="label">实际完成</span><div class="metric">'+completed+'</div><span class="label">节</span></div>'+
+      '<div class="card"><span class="label">课时包余额</span><div class="metric">'+(remain===null?'—':remain)+'</div><span class="label">'+(n.p?esc(n.p.name):'未绑定课时包')+'</span></div>'+
+      '<div class="card"><span class="label">教师反馈</span><div class="metric">'+feedbacks.length+'</div><span class="label">条</span></div></div>'+
+      '<section class="section"><div class="two">'+
+      '<div class="card"><h3 style="margin-top:0">课程信息</h3>'+
+      '<div class="finance-row"><span>学生</span><b>'+esc(n.s?.name||'未设置')+'</b></div>'+
+      '<div class="finance-row"><span>科目</span><b>'+esc(c.subject||'未设置')+'</b></div>'+
+      '<div class="finance-row"><span>课程类型</span><b>'+esc(c.type||'未设置')+'</b></div>'+
+      '<div class="finance-row"><span>老师</span><b>'+esc(n.t?.name||'未设置')+'</b></div>'+
+      '<div class="finance-row"><span>上课方式</span><b>'+esc(c.mode||'未设置')+'</b></div>'+
+      '<div class="finance-row"><span>固定安排</span><b>'+esc(c.schedule||'待安排')+'</b></div>'+
+      '<div class="finance-row"><span>开始日期</span><b>'+esc(c.start||'未设置')+'</b></div>'+
+      '<div class="finance-row"><span>每节时长</span><b>'+esc(c.duration||'—')+' 小时</b></div>'+
+      '<div class="finance-row"><span>课时包</span><b>'+esc(n.p?.name||'未绑定')+'</b></div>'+
+      '</div>'+
+      '<div class="card"><h3 style="margin-top:0">课程操作</h3>'+
+      '<button class="primary" id="eduRecordLesson" style="width:100%;margin-bottom:10px">＋ 记录实际上课</button>'+
+      '<button class="link" id="eduAddFeedback" style="width:100%;margin-bottom:10px">＋ 添加教师反馈</button>'+
+      '<button class="link" id="eduChangeCourseStatus" style="width:100%">修改课程状态</button>'+
+      '<div style="margin-top:18px;padding:12px;border-radius:10px;background:var(--surface2);font-size:13px;color:var(--muted)">只有「已完成」的实际上课记录会自动扣减课时包；取消、缺席或未完成记录不会自动扣课时。</div>'+
+      '</div></div></section>'+
+      '<section class="section"><div class="section-head"><h2>实际上课记录</h2><span class="label">每一次实际发生的课程</span></div><div class="card" id="eduLessonHistory">'+
+      (lessons.length?lessons.map(l=>'<div class="finance-row"><span><b>'+esc(l.date||'未设置日期')+' '+esc(l.time||'')+'</b><br><span class="label">'+esc(l.duration||c.duration||'')+' 小时 · '+esc(l.status||'已完成')+(l.note?' · '+esc(l.note):'')+'</span></span><span><span class="pill">'+esc(l.status||'已完成')+'</span> <button class="link" data-delete-lesson="'+esc(l.id)+'">删除</button></span></div>').join(''):'<span class="label">暂无实际上课记录。</span>')+
+      '</div></section>'+
+      '<section class="section"><div class="section-head"><h2>教师反馈</h2><span class="label">与这门课程绑定</span></div><div class="card">'+
+      (feedbacks.length?feedbacks.map(f=>'<div style="padding:12px 0;border-bottom:1px solid var(--border)"><b>'+esc(f.date||'')+' · '+esc(f.teacherName||n.t?.name||'老师')+'</b><div class="label" style="margin-top:6px;white-space:pre-wrap">'+esc(f.content||'')+'</div></div>').join(''):'<span class="label">暂无教师反馈。</span>')+
+      '</div></section>';
+    document.getElementById('eduRecordLesson').onclick=()=>recordLesson(c.id);
+    document.getElementById('eduAddFeedback').onclick=()=>addFeedback(c.id);
+    document.getElementById('eduChangeCourseStatus').onclick=()=>changeStatus(c.id);
+    document.querySelectorAll('[data-delete-lesson]').forEach(b=>b.onclick=()=>deleteLesson(b.dataset.deleteLesson,c.id));
+  }
+  function recordLesson(cid){
+    const d=ensure(load()),c=d.courses.find(x=>String(x.id)===String(cid));if(!c)return;
+    const date=text('实际上课日期（YYYY-MM-DD）',new Date().toISOString().slice(0,10));if(date===null)return;
+    const time=text('实际上课时间', '17:00');if(time===null)return;
+    const duration=Number(text('实际上课时长（小时）',c.duration||1));if(!duration||duration<=0)return;
+    const status=text('上课状态：输入 已完成 / 缺席 / 取消 / 未完成','已完成');if(status===null)return;
+    const note=text('备注','');if(note===null)return;
+    const l={id:uid('lesson'),courseId:cid,studentId:c.studentId,teacherId:c.teacherId,date,time,duration,status,note,createdAt:new Date().toISOString()};
+    d.lessons.push(l);
+    if(status==='已完成'&&c.packageId){
+      const p=d.packages.find(x=>String(x.id)===String(c.packageId));
+      if(p){
+        p.usedHours=Number(p.usedHours||0)+duration;
+        if(Number(p.usedHours)>=Number(p.totalHours||0))p.status='已结束';
+      }
+    }
+    save(d);renderDetail(c,d);
+    if(window.renderEducationPage)window.renderEducationPage();
+  }
+  function deleteLesson(lid,cid){
+    const d=ensure(load()),l=d.lessons.find(x=>String(x.id)===String(lid));if(!l)return;
+    if(!confirm('删除这条实际上课记录？系统会同时回退该记录已扣除的课时。'))return;
+    if(l.status==='已完成'){
+      const c=d.courses.find(x=>String(x.id)===String(cid)),p=c&&d.packages.find(x=>String(x.id)===String(c.packageId));
+      if(p)p.usedHours=Math.max(0,Number(p.usedHours||0)-Number(l.duration||0));
+      if(p&&p.status==='已结束'&&Number(p.usedHours)<Number(p.totalHours||0))p.status='有效';
+    }
+    d.lessons=d.lessons.filter(x=>String(x.id)!==String(lid));save(d);
+    const c=d.courses.find(x=>String(x.id)===String(cid));if(c)renderDetail(c,d);
+    if(window.renderEducationPage)window.renderEducationPage();
+  }
+  function addFeedback(cid){
+    const d=ensure(load()),c=d.courses.find(x=>String(x.id)===String(cid));if(!c)return;
+    const n=names(d,c),content=text('教师反馈内容','');if(content===null||!content)return;
+    const date=text('反馈日期',new Date().toISOString().slice(0,10));if(date===null)return;
+    d.feedbacks.push({id:uid('feedback'),courseId:cid,studentId:c.studentId,teacherId:c.teacherId,teacherName:n.t?.name||'老师',date,content,status:'待跟进',createdAt:new Date().toISOString()});
+    save(d);renderDetail(c,d);
+    if(window.renderEducationPage)window.renderEducationPage();
+  }
+  function changeStatus(cid){
+    const d=ensure(load()),c=d.courses.find(x=>String(x.id)===String(cid));if(!c)return;
+    const s=text('课程状态：已安排 / 进行中 / 暂停 / 已结束',c.status);if(s===null)return;
+    c.status=s;save(d);renderDetail(c,d);if(window.renderEducationPage)window.renderEducationPage();
+  }
+
+  function addDetailButtons(){
+    const list=document.getElementById('eduCourseList');if(!list)return;
+    list.querySelectorAll('[data-edit-course]').forEach(edit=>{
+      if(edit.parentElement.querySelector('[data-detail-course]'))return;
+      const b=document.createElement('button');b.className='link';b.dataset.detailCourse=edit.dataset.editCourse;b.textContent='查看详情';edit.parentElement.appendChild(b);
+      b.onclick=()=>showDetail(b.dataset.detailCourse);
+    });
+  }
+  document.addEventListener('click',e=>{
+    const b=e.target.closest('[data-detail-course]');if(b)showDetail(b.dataset.detailCourse);
+    if(e.target.id==='eduCloseDetail'){
+      document.getElementById('eduCourseDetailPanel').style.display='none';
+      document.getElementById('eduCoursesPanel').style.display='block';
+      currentId='';
+    }
+  });
+  const list=document.getElementById('eduCourseList');
+  if(list)new MutationObserver(addDetailButtons).observe(list,{childList:true,subtree:true});
+  setTimeout(addDetailButtons,500);
+  window.eduShowCourseDetail=showDetail;
 })();
 </script>
 </body></html>
