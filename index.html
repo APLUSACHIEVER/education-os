@@ -437,7 +437,7 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
 (function(){
  const modal=document.getElementById('studentModal'),btn=document.getElementById('addStudentBtn'),close=document.getElementById('studentClose'),cancel=document.getElementById('studentCancel'),form=document.getElementById('studentForm'),stage=document.getElementById('studentStage'),grade=document.getElementById('studentGrade'),path=document.getElementById('studentPath'),note=document.getElementById('studentPathNote'),cards=document.getElementById('studentCards');
  if(!modal||!btn||!form)return;
- const options={Primary:{grades:['Primary 1','Primary 2','Primary 3','Primary 4','Primary 5','Primary 6'],paths:['小学普通课程']},Secondary:{grades:['Secondary 1','Secondary 2','Secondary 3','Secondary 4','Secondary 5'],paths:['IP','Mainstream PG 3','Mainstream PG 2','Mainstream PG 1']},JC:{grades:['JC 1','JC 2'],paths:['JC']}};
+ const options={Primary:{grades:['Primary 1','Primary 2','Primary 3','Primary 4','Primary 5','Primary 6'],paths:['小学普通课程']},Secondary:{grades:['Secondary 1','Secondary 2','Secondary 3','Secondary 4'],paths:['IP','Mainstream PG 3','Mainstream PG 2','Mainstream PG 1']},JC:{grades:['JC 1','JC 2'],paths:['JC']}};
  const esc=v=>String(v||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
  function read(){try{return JSON.parse(localStorage.getItem('educationOS_students')||'[]')}catch(e){return[]}}
  function refresh(){const d=options[stage.value];grade.innerHTML=d.grades.map(x=>'<option>'+x+'</option>').join('');path.innerHTML=d.paths.map(x=>'<option>'+x+'</option>').join('');note.textContent=stage.value==='Secondary'?'中学路径按学生实际 Programme 记录；Mainstream 可选择 PG 3、PG 2、PG 1。':stage.value==='Primary'?'小学按 Primary 1–6 记录。':stage.value==='JC'?'初级学院按 JC 1–2 记录。':'励仁高级中学按 MI 1–3 记录。'}
@@ -621,7 +621,7 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
   function hideFamily(){const b=q('familyEditBackdrop');if(b){b.classList.remove('show');b.setAttribute('aria-hidden','true')}document.body.style.overflow=''}
   function refreshStudentForm(){
     const stage=q('studentStage'),grade=q('studentGrade'),path=q('studentPath'),note=q('studentPathNote');if(!stage||!grade||!path)return;
-    const o={Primary:{g:['Primary 1','Primary 2','Primary 3','Primary 4','Primary 5','Primary 6'],p:['小学普通课程'],n:'小学按 Primary 1–6 记录。'},Secondary:{g:['Secondary 1','Secondary 2','Secondary 3','Secondary 4','Secondary 5'],p:['IP','Mainstream PG 3','Mainstream PG 2','Mainstream PG 1'],n:'中学按学生实际 Programme 记录；Mainstream 可分别记录 PG 3、PG 2、PG 1。'},JC:{g:['JC 1','JC 2'],p:['JC'],n:'初级学院按 JC 1–2 记录。'}}[stage.value]||null;if(!o)return;
+    const o={Primary:{g:['Primary 1','Primary 2','Primary 3','Primary 4','Primary 5','Primary 6'],p:['小学普通课程'],n:'小学按 Primary 1–6 记录。'},Secondary:{g:['Secondary 1','Secondary 2','Secondary 3','Secondary 4'],p:['IP','Mainstream PG 3','Mainstream PG 2','Mainstream PG 1'],n:'中学按学生实际 Programme 记录；Mainstream 可分别记录 PG 3、PG 2、PG 1。'},JC:{g:['JC 1','JC 2'],p:['JC'],n:'初级学院按 JC 1–2 记录。'}}[stage.value]||null;if(!o)return;
     grade.innerHTML=o.g.map(x=>'<option>'+x+'</option>').join('');path.innerHTML=o.p.map(x=>'<option>'+x+'</option>').join('');if(note)note.textContent=o.n;
   }
   function showStudent(){const m=q('studentModal');if(!m)return;refreshStudentForm();m.style.display='block';document.body.style.overflow='hidden'}
