@@ -448,7 +448,7 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
      '<section class="section"><div class="section-head"><h2>二、当前教育资料</h2><span class="pill">'+esc(s.schoolYear||'未设置')+' · '+esc(s.grade||'未设置')+'</span></div><div class="card"><div class="two">'+
        fr([['当前学校',esc(s.school||'未填写')],['学段',stageName],['年级',esc(s.grade||'未设置')],['学习路径',esc(s.path||'未设置')],['当前主要科目',esc(s.subjects||'尚未设置')],['当前学年',esc(s.schoolYear||'未设置')]])+
      '</div></div></section>'+
-     '<section class="section"><div class="section-head"><h2>三、学年档案</h2><span class="label">历史学年不覆盖</span></div><div class="card">'+years.map((y,i)=>'<div class="finance-row"><span>'+esc(y)+'</span><b>'+ (i===0?'当前学年':'下一学年，可建立新的学校、科目、成绩与目标') +'</b></div>').join('')+'</div></section>'+
+     '<section class="section"><div class="section-head"><h2>三、学年档案</h2><span class="label">点击进入独立学年记录</span></div><div class="card"><div style="display:flex;gap:8px;flex-wrap:wrap">'+years.map((y,i)=>'<button class="pill year-profile-btn" data-year="'+esc(y.split(' · ')[0])+'">'+esc(y)+'</button>').join('')+'</div><div class="label" style="margin-top:10px">每个学年独立保存学校、科目、成绩、课程、目标、考试、反馈与 DSA 记录。</div></div></section>'+
      '<section class="section"><div class="two"><div><div class="section-head"><h2>四、学业与教育</h2></div><div class="card">'+fr([['当前学业目标',esc(s.goal||'尚未设置')],['学习进度','待建立学业记录'],['课程 / 补习','待连接教育管理'],['老师','待连接老师档案'],['成绩记录','待建立学年成绩']])+'</div></div><div><div class="section-head"><h2>五、家庭服务连接</h2></div><div class="card">'+fr([['家庭日程','将显示该学生相关课程、考试与活动'],['接送管理','将显示该学生接送任务'],['教育管理','课程、老师、课时包与反馈'],['学业管理','目标、成绩、进度与考试'],['学校 / DSA规划','按学年建立升学与 DSA 记录']])+'</div></div></div></section>'+
      '<section class="section"><div class="section-head"><h2>六、学生备注</h2><span class="label">长期信息</span></div><div class="card">'+(s.note?esc(s.note):'<span class="label">暂未填写。后续可记录长期学习、沟通与安排。</span>')+'</div></section>';
    ['dashboard','familyPage','childProfile','dsaPlanning','familySchedule','transportPage','educationPage','academicPage','feesPage','moeSubjectExplorer','placeholder'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
@@ -457,8 +457,26 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
    const childNav=document.querySelector('.nav button[data-page="孩子完整档案"]');if(childNav)childNav.classList.add('active');
    const title=document.getElementById('pageTitle'),sub=document.getElementById('pageSub');if(title)title.textContent='学生完整档案';if(sub)sub.textContent=(s.name||'学生')+' · '+(s.schoolYear||'')+' · '+(s.grade||'');
  }
+ function showStudentYearProfile(id,year){
+   const s=getStudentById(id);if(!s)return;
+   const stageName=s.stage==='Secondary'?'中学':s.stage==='JC'?'初级学院':s.stage==='MI'?'励仁高级中学':'小学';
+   const current=String(s.schoolYear||'2026'), y=String(year);
+   let d={year:y,grade:s.grade||'未设置',status:y===current?'当前学年':'历史 / 未来学年',school:s.school||'未填写',path:s.path||'未设置',subjects:s.subjects||'尚未设置',goal:s.goal||'尚未设置',exam:'待建立',dsa:'待规划',progress:'待建立'};
+   if((s.name==='Jason'||s.id==='legacy_jason')&&y==='2027')d={year:y,grade:'Primary 6',status:'下一学年',school:s.school||'当前小学',path:'小学普通课程',subjects:'English · Mother Tongue · Mathematics · Science',goal:'PSLE 全面准备',exam:'PSLE',dsa:'2027 DSA-Sec 申请年份',progress:'待建立'};
+   if((s.name==='Jason'||s.id==='legacy_jason')&&y==='2028')d={year:y,grade:'Secondary 1',status:'升学规划',school:'待确认',path:'IP / Mainstream 待规划',subjects:'待选择',goal:'完成中学升学规划',exam:'待建立',dsa:'升学规划',progress:'待建立'};
+   const detail=document.getElementById('studentDetailContent');
+   detail.innerHTML='<div class="card" style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:center"><div><h2 style="margin:0">'+esc(s.name)+' · '+esc(d.year)+' 学年档案</h2><div class="label" style="margin-top:5px">'+esc(d.grade)+' · '+stageName+' · '+esc(d.status)+'</div></div><button class="link" id="backStudentOverview">← 学生总档案</button></div></div>'+
+   '<section class="section" style="margin-top:0"><div class="section-head"><h2>一、学年基本资料</h2><span class="pill">'+esc(d.year)+' · '+esc(d.grade)+'</span></div><div class="card"><div class="two">'+fr([['学年状态',esc(d.status)],['学校',esc(d.school)],['学习路径',esc(d.path)],['年级',esc(d.grade)],['主要科目',esc(d.subjects)],['学业目标',esc(d.goal)])+'</div></div></section>'+
+   '<section class="section"><div class="section-head"><h2>二、科目与学习进度</h2><span class="label">每一科独立记录</span></div><div class="card">'+fr([['English Language',esc(d.progress)],['Mathematics',esc(d.progress)],['Science',esc(d.progress)],['Mother Tongue Language','待建立'],['其他科目','按学校实际课程建立']])+'</div></section>'+
+   '<section class="section"><div class="two"><div><div class="section-head"><h2>三、成绩记录</h2></div><div class="card">'+fr([['平时测验','待建立'],['学校考试',esc(d.exam)],['阶段成绩','待建立'],['老师评价','待建立']])+'</div></div><div><div class="section-head"><h2>四、课程与老师</h2></div><div class="card">'+fr([['课程 / 补习','待连接教育管理'],['老师','待连接老师档案'],['课时包','待连接课时包'],['教师反馈','待建立']])+'</div></div></div></section>'+
+   '<section class="section"><div class="two"><div><div class="section-head"><h2>五、考试与目标</h2></div><div class="card">'+fr([['考试',esc(d.exam)],['当前目标',esc(d.goal)],['学习进度',esc(d.progress)],['下一阶段','待建立']])+'</div></div><div><div class="section-head"><h2>六、学校 / DSA规划</h2></div><div class="card">'+fr([['DSA状态',esc(d.dsa)],['候选学校','可建立多所候选学校'],['学校选择','待确认'],['申请记录','待建立']])+'</div></div></div></section>'+
+   '<section class="section"><div class="section-head"><h2>七、家庭日程与接送</h2><span class="label">按学年连接</span></div><div class="card">'+fr([['家庭日程','课程、考试、活动将进入家庭日程'],['接送管理','该学生接送任务进入接送安排'],['临时安排','可记录临时接送变化'],['冲突管理','自动检查时间冲突']])+'</div></section>'+
+   '<section class="section"><div class="section-head"><h2>八、学年备注</h2></div><div class="card"><span class="label">当前学年暂未建立额外备注。</span></div></section>';
+   detail.querySelectorAll('.year-profile-btn').forEach(b=>b.onclick=()=>showStudentYearProfile(id,b.dataset.year));
+   document.getElementById('backStudentOverview').onclick=()=>showStudentProfile(id);
+ }
  cards.addEventListener('click',e=>{const card=e.target.closest('.student-card');if(card)showStudentProfile(card.dataset.studentId)});
  const back=document.getElementById('studentBackBtn');if(back)back.addEventListener('click',()=>{document.querySelector('.nav button[data-page="客户 / 家庭档案"]')?.click()});
- window.showStudentProfile=showStudentProfile;
+ window.showStudentProfile=showStudentProfile; window.showStudentYearProfile=showStudentYearProfile;
 })();
 </script></body></html>
