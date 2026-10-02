@@ -421,7 +421,7 @@
    const yearRecord=Array.isArray(s.academicYears)?s.academicYears.find(r=>String(r.year)===y):null; let d={year:y,grade:yearRecord?.grade||s.grade||'未设置',status:y===current?'当前学年':'历史 / 未来学年',school:yearRecord?.school||s.school||'未填写',path:yearRecord?.path||s.path||'未设置',subjects:yearRecord?.subjects||s.subjects||'尚未设置',goal:yearRecord?.goal||s.goal||'尚未设置',exam:'待建立',dsa:'待规划',progress:'待建立'};
       const detail=document.getElementById('studentDetailContent');
    detail.innerHTML='<div class="card" style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:center"><div><h2 style="margin:0">'+esc(s.name)+' · '+esc(d.year)+' 学年档案</h2><div class="label" style="margin-top:5px">'+esc(d.grade)+' · '+stageName+' · '+esc(d.status)+'</div></div><button class="link" id="backStudentOverview">← 学生总档案</button></div></div>'+
-   '<div style="display:flex;justify-content:flex-end;margin:0 0 10px"><button type="button" class="link" id="editStudentYearBtn">✎ 编辑本学年</button></div><section class="section" style="margin-top:0"><div class="section-head"><h2>一、学年基本资料</h2><span class="pill">'+esc(d.year)+' · '+esc(d.grade)+'</span></div><div class="card"><div class="two">'+fr([['学年状态',esc(d.status)],['学校',esc(d.school)],['学习路径',esc(d.path)],['年级',esc(d.grade)],['主要科目',esc(d.subjects)],['学业目标',esc(d.goal)])+'</div></div></section>'+
+   '<div style="display:flex;justify-content:flex-end;margin:0 0 10px"><button type="button" class="link" id="editStudentYearBtn">✎ 编辑本学年</button></div><section class="section" style="margin-top:0"><div class="section-head"><h2>一、学年基本资料</h2><span class="pill">'+esc(d.year)+' · '+esc(d.grade)+'</span></div><div class="card"><div class="two">'+fr([['学年状态',esc(d.status)],['学校',esc(d.school)],['学习路径',esc(d.path)],['年级',esc(d.grade)],['主要科目',esc(d.subjects)],['学业目标',esc(d.goal)]])+'</div></div></section>'+
    '<section class="section"><div class="section-head"><h2>二、学校 × 学年 × 科目</h2><span class="label">本学年实际连接</span></div><div class="card"><div class="two">'+fr([['学校',esc(d.school)],['学年',esc(d.year)],['年级',esc(d.grade)],['学习路径',esc(d.path)]])+'</div><div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)"><div class="label" style="margin-bottom:8px">本学年科目</div><div style="display:flex;gap:8px;flex-wrap:wrap">'+subjectListForYear(d.subjects).map(n=>'<button type="button" class="pill year-subject-btn" data-subject="'+esc(n)+'">'+esc(n)+' →</button>').join('')+'</div><div class="label" style="margin-top:10px">科目从该学年档案进入独立科目档案；以后可再连接学校实际开设科目。</div></div></div></section>'+
    '<section class="section"><div class="two"><div><div class="section-head"><h2>三、成绩记录</h2></div><div class="card">'+fr([['平时测验','待建立'],['学校考试',esc(d.exam)],['阶段成绩','待建立'],['老师评价','待建立']])+'</div></div><div><div class="section-head"><h2>四、课程与老师</h2></div><div class="card">'+fr([['课程 / 补习','待连接教育管理'],['老师','待连接老师档案'],['课时包','待连接课时包'],['教师反馈','待建立']])+'</div></div></div></section>'+
    '<section class="section"><div class="two"><div><div class="section-head"><h2>五、考试与目标</h2></div><div class="card">'+fr([['考试',esc(d.exam)],['当前目标',esc(d.goal)],['学习进度',esc(d.progress)],['下一阶段','待建立']])+'</div></div><div><div class="section-head"><h2>六、学校 / DSA规划</h2></div><div class="card">'+fr([['DSA状态',esc(d.dsa)],['候选学校','可建立多所候选学校'],['学校选择','待确认'],['申请记录','待建立']])+'</div></div></div></section>'+
@@ -433,11 +433,11 @@
      const key='educationOS_students', list=JSON.parse(localStorage.getItem(key)||'[]'), idx=list.findIndex(x=>String(x.id)===String(id));
      if(idx<0)return alert('未找到学生档案');
      const s0=list[idx], years=Array.isArray(s0.academicYears)?s0.academicYears:[], rec=years.find(r=>String(r.year)===String(y))||{year:y};
-     const school=prompt('学校（手动填写）',rec.school||'')??rec.school||'';
-     const grade=prompt('年级',rec.grade||d.grade||'')??rec.grade||d.grade||'';
-     const path=prompt('学习路径',rec.path||d.path||'')??rec.path||d.path||'';
-     const subjects=prompt('本学年科目（用 · 分隔）',rec.subjects||d.subjects||'')??rec.subjects||d.subjects||'';
-     const goal=prompt('学业目标',rec.goal||d.goal||'')??rec.goal||d.goal||'';
+     const school=prompt('学校（手动填写）',rec.school||'')??(rec.school||'');
+     const grade=prompt('年级',rec.grade||d.grade||'')??(rec.grade||d.grade||'');
+     const path=prompt('学习路径',rec.path||d.path||'')??(rec.path||d.path||'');
+     const subjects=prompt('本学年科目（用 · 分隔）',rec.subjects||d.subjects||'')??(rec.subjects||d.subjects||'');
+     const goal=prompt('学业目标',rec.goal||d.goal||'')??(rec.goal||d.goal||'');
      const next={...rec,id:rec.id||('academic_'+id+'_'+y),year:y,school,grade,path,subjects,goal,updatedAt:new Date().toISOString()};
      const pos=years.findIndex(r=>String(r.year)===String(y)); if(pos>=0)years[pos]=next; else years.push(next);
      s0.academicYears=years; list[idx]=s0; localStorage.setItem(key,JSON.stringify(list)); alert('学年档案已更新'); showStudentYearProfile(id,y);
@@ -598,7 +598,7 @@
     renderSubjectLessons();
     const editSubjectTeachingBtn=document.getElementById('editSubjectTeachingBtn');
     if(editSubjectTeachingBtn) editSubjectTeachingBtn.onclick=function(){
-      const teacher=prompt('老师',teacherDisplay==='未设置'?'':teacherDisplay)??teacherDisplay; const course=prompt('课程 / 补习',courseDisplay==='未设置'?'':courseDisplay)??courseDisplay; const pkg=prompt('课时包',packageDisplay==='未设置'?'':packageDisplay)??packageDisplay; const totalHours=Number(prompt('课时包总课时（小时）',String(pack?.totalHours||20))); const totalAmount=Number(prompt('课时包总金额（新加坡元）',String(pack?.totalAmount||0))); const frequency=prompt('上课频率',subjectRec.frequency||'')??subjectRec.frequency||'';
+      const teacher=prompt('老师',teacherDisplay==='未设置'?'':teacherDisplay)??teacherDisplay; const course=prompt('课程 / 补习',courseDisplay==='未设置'?'':courseDisplay)??courseDisplay; const pkg=prompt('课时包',packageDisplay==='未设置'?'':packageDisplay)??packageDisplay; const totalHours=Number(prompt('课时包总课时（小时）',String(pack?.totalHours||20))); const totalAmount=Number(prompt('课时包总金额（新加坡元）',String(pack?.totalAmount||0))); const frequency=prompt('上课频率',subjectRec.frequency||'')??(subjectRec.frequency||'');
       const key='educationOS_students',list=JSON.parse(localStorage.getItem(key)||'[]'),idx=list.findIndex(x=>String(x.id)===String(id));
       if(idx<0)return alert('未找到学生档案');
       const st=list[idx],yrs=Array.isArray(st.academicYears)?st.academicYears:[],pos=yrs.findIndex(r=>String(r.year)===String(year)); const rec=pos>=0?yrs[pos]:{id:'academic_'+id+'_'+year,year:String(year)}; const rid=()=>crypto.randomUUID?crypto.randomUUID():String(Date.now())+'_'+Math.random().toString(36).slice(2); const teacherId=subjectRec.teacherId||('teacher_'+rid()); const courseId=subjectRec.courseId||('course_'+rid()); const packageId=subjectRec.packageId||('package_'+rid()); relations.teachers=Array.isArray(relations.teachers)?relations.teachers:[]; relations.courses=Array.isArray(relations.courses)?relations.courses:[]; relations.packages=Array.isArray(relations.packages)?relations.packages:[]; let tr=relations.teachers.find(x=>x.id===teacherId); if(!tr){tr={id:teacherId,name:teacher};relations.teachers.push(tr)}else tr.name=teacher; let co=relations.courses.find(x=>x.id===courseId); if(!co){co={id:courseId,name:course};relations.courses.push(co)} Object.assign(co,{studentId:String(id),academicYearId:rec?.id||('academic_'+id+'_'+year),subjectId:subjectKey,teacherId,packageId,frequency,name:course}); let pa=relations.packages.find(x=>x.id===packageId); if(!pa){pa={id:packageId,name:pkg,studentId:String(id),academicYearId:rec.id,subjectId:subjectKey,courseId,totalHours:Math.max(0,totalHours||0),usedHours:0,totalAmount:Math.max(0,totalAmount||0)};relations.packages.push(pa)}else {pa.name=pkg;pa.studentId=String(id);pa.academicYearId=rec.id;pa.subjectId=subjectKey;pa.courseId=courseId;if(totalHours>0)pa.totalHours=totalHours;if(totalAmount>=0)pa.totalAmount=totalAmount;} saveEducationRelations(relations);
@@ -694,7 +694,7 @@
     const plans=r.planning||[];
     cards.innerHTML=ss.map(s=>{const sp=plans.filter(x=>String(x.studentId)===String(s.id));return '<div class="card"><div class="section-head"><div><h2>'+esc(s.name)+'</h2><span class="label">学生独立升学规划</span></div><span class="pill">'+sp.length+' 项规划</span></div>'+(sp.length?sp.map(x=>'<div class="item"><strong>'+esc(x.academicYear||'')+' · '+esc(x.stage||'')+'</strong><small>目标学校：'+esc(x.targetSchool||'未设置')+' · DSA：'+esc(x.dsaArea||'未设置')+'</small><small>申请状态：'+esc(x.status||'规划中')+' · 结果：'+esc(x.result||'待确认')+'</small><small>最终学校：'+esc(x.finalSchool||'待确认')+'</small><button class="link planning-del" data-id="'+esc(x.id)+'">删除规划</button></div>').join(''):'<span class="label">暂无升学规划。新增后只属于该学生。</span>')+'</div>'}).join('');
     cards.querySelectorAll('.planning-del').forEach(b=>b.onclick=()=>{const idx=r.planning.findIndex(x=>String(x.id)===String(b.dataset.id));if(idx>=0){r.planning.splice(idx,1);save(REL,r);renderPlanning();}});
-    document.getElementById('addPlanningBtn')?.addEventListener('click',()=>{if(!ss.length){alert('请先建立学生档案。');return;}const names=ss.map((s,i)=>(i+1)+'. '+s.name).join('\');const n=Number(prompt('选择学生编号\'+names,'1'))-1;const s=ss[n];if(!s)return;const academicYear=prompt('申请 / 目标学年','2028')||'';const stage=prompt('升学阶段','S1')||'S1';const targetSchool=prompt('目标学校（可填写多个）','')||'';const dsaArea=prompt('DSA Talent Area / 项目（可留空）','')||'';const status=prompt('申请状态','规划中')||'规划中';const result=prompt('录取结果','待确认')||'待确认';const finalSchool=prompt('最终学校','待确认')||'待确认';r.planning.push({id:'planning_'+Date.now(),studentId:String(s.id),academicYear,stage,targetSchool,dsaArea,status,result,finalSchool,createdAt:new Date().toISOString()});save(REL,r);renderPlanning();});
+    document.getElementById('addPlanningBtn')?.addEventListener('click',()=>{if(!ss.length){alert('请先建立学生档案。');return;}const names=ss.map((s,i)=>(i+1)+'. '+s.name).join('\\n');const n=Number(prompt('选择学生编号\\n'+names,'1'))-1;const s=ss[n];if(!s)return;const academicYear=prompt('申请 / 目标学年','2028')||'';const stage=prompt('升学阶段','S1')||'S1';const targetSchool=prompt('目标学校（可填写多个）','')||'';const dsaArea=prompt('DSA Talent Area / 项目（可留空）','')||'';const status=prompt('申请状态','规划中')||'规划中';const result=prompt('录取结果','待确认')||'待确认';const finalSchool=prompt('最终学校','待确认')||'待确认';r.planning.push({id:'planning_'+Date.now(),studentId:String(s.id),academicYear,stage,targetSchool,dsaArea,status,result,finalSchool,createdAt:new Date().toISOString()});save(REL,r);renderPlanning();});
   }
   function renderManagementPages(){
     const r=ensureStore(), ss=allStudents();
@@ -790,7 +790,7 @@
     document.getElementById('addVehicleBtn')?.addEventListener('click',()=>{const number=prompt('车辆号码');if(!number)return;vehicles.push({id:'vehicle_'+Date.now(),number:number.trim(),model:prompt('车辆型号','')||'',note:prompt('备注','')||'',status:'可用'});save(REL,r);renderTransport()});
     document.getElementById('addTransportFeeBtn')?.addEventListener('click',()=>{
       if(!ss.length){alert('请先建立学生档案。');return;}
-      const names=ss.map((s,i)=>(i+1)+'. '+s.name).join('\');const si=Number(prompt('选择学生编号\'+names,'1'))-1;const student=ss[si];if(!student)return;
+      const names=ss.map((s,i)=>(i+1)+'. '+s.name).join('\\n');const si=Number(prompt('选择学生编号\\n'+names,'1'))-1;const student=ss[si];if(!student)return;
       const taskId=prompt('关联接送任务 ID（可留空）','')||'';
       const description=prompt('费用说明','接送服务费')||'接送服务费';
       const amount=Number(prompt('金额（新加坡元）','0'));if(!amount||amount<0)return;
@@ -805,20 +805,20 @@
     });
     document.getElementById('addTransportBtn')?.addEventListener('click',()=>{
       if(!ss.length){alert('请先建立学生档案。');return;}
-      const names=ss.map((s,i)=>(i+1)+'. '+s.name).join('\');const si=Number(prompt('选择学生编号\'+names,'1'))-1;const student=ss[si];if(!student)return;
+      const names=ss.map((s,i)=>(i+1)+'. '+s.name).join('\\n');const si=Number(prompt('选择学生编号\\n'+names,'1'))-1;const student=ss[si];if(!student)return;
       const date=prompt('日期',new Date().toISOString().slice(0,10))||'';const time=prompt('时间','17:00')||'';const from=prompt('出发地点','学校')||'';const to=prompt('目的地','家庭')||'';
-      const ds=drivers.length?drivers.map((d,i)=>(i+1)+'. '+d.name).join('\'):'无司机资料';const di=drivers.length?Number(prompt('选择司机编号\'+ds,'1'))-1:-1;const driver=drivers[di];
-      const vs=vehicles.length?vehicles.map((v,i)=>(i+1)+'. '+v.number).join('\'):'无车辆资料';const vi=vehicles.length?Number(prompt('选择车辆编号\'+vs,'1'))-1:-1;const vehicle=vehicles[vi];
+      const ds=drivers.length?drivers.map((d,i)=>(i+1)+'. '+d.name).join('\\n'):'无司机资料';const di=drivers.length?Number(prompt('选择司机编号\\n'+ds,'1'))-1:-1;const driver=drivers[di];
+      const vs=vehicles.length?vehicles.map((v,i)=>(i+1)+'. '+v.number).join('\\n'):'无车辆资料';const vi=vehicles.length?Number(prompt('选择车辆编号\\n'+vs,'1'))-1:-1;const vehicle=vehicles[vi];
       const status=prompt('状态：待确认 / 已确认 / 已完成 / 已取消','待确认')||'待确认';const note=prompt('备注','')||'';
       tasks.push({id:'transport_'+Date.now(),studentId:String(student.id),driverId:driver?String(driver.id):'',vehicleId:vehicle?String(vehicle.id):'',date,time,from,to,duration:1,status,note});
       save(REL,r);renderTransport();
     });
     document.getElementById('addTempBtn')?.addEventListener('click',()=>{
       if(!ss.length){alert('请先建立学生档案。');return;}
-      const names=ss.map((s,i)=>(i+1)+'. '+s.name).join('\');const si=Number(prompt('选择学生编号\'+names,'1'))-1;const student=ss[si];if(!student)return;
+      const names=ss.map((s,i)=>(i+1)+'. '+s.name).join('\\n');const si=Number(prompt('选择学生编号\\n'+names,'1'))-1;const student=ss[si];if(!student)return;
       const date=prompt('日期',new Date().toISOString().slice(0,10))||'';const time=prompt('时间','17:00')||'';const type=prompt('安排类型','临时接送')||'临时接送';const from=prompt('出发地点','')||'';const to=prompt('目的地','')||'';const note=prompt('备注','')||'';
-      const ds=drivers.length?drivers.map((d,i)=>(i+1)+'. '+d.name).join('\'):'无司机资料';const di=drivers.length?Number(prompt('选择司机编号\'+ds,'1'))-1:-1;const driver=drivers[di];
-      const vs=vehicles.length?vehicles.map((v,i)=>(i+1)+'. '+v.number).join('\'):'无车辆资料';const vi=vehicles.length?Number(prompt('选择车辆编号\'+vs,'1'))-1:-1;const vehicle=vehicles[vi];
+      const ds=drivers.length?drivers.map((d,i)=>(i+1)+'. '+d.name).join('\\n'):'无司机资料';const di=drivers.length?Number(prompt('选择司机编号\\n'+ds,'1'))-1:-1;const driver=drivers[di];
+      const vs=vehicles.length?vehicles.map((v,i)=>(i+1)+'. '+v.number).join('\\n'):'无车辆资料';const vi=vehicles.length?Number(prompt('选择车辆编号\\n'+vs,'1'))-1:-1;const vehicle=vehicles[vi];
       temps.push({id:'temp_'+Date.now(),studentId:String(student.id),date,time,type,from,to,driverId:driver?String(driver.id):'',vehicleId:vehicle?String(vehicle.id):'',note,title:type+' · '+student.name});
       save(REL,r);renderTransport();
     });
