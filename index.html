@@ -823,6 +823,16 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
     const sec=document.createElement('section');sec.className='section';sec.id='educationDataOverview';sec.innerHTML='<div class="grid"><div class="card"><div class="section-head"><h2>老师</h2><span class="pill">'+teachers.length+' 位</span></div>'+ (teachers.length?teachers.map(t=>'<div class="event"><div><strong>'+esc(t.name)+'</strong><small>'+esc(t.phone||'')+'</small></div></div>').join(''):'<span class="label">暂无老师档案。老师会在科目档案中建立。</span>')+'</div><div class="card"><div class="section-head"><h2>课时包</h2><span class="pill">'+packages.length+' 个</span></div>'+ (packages.length?packages.map(pa=>'<div class="event"><div><strong>'+esc(pa.name||'课时包')+'</strong><small>'+esc(pa.totalHours||0)+' 小时 · 已使用 '+esc(pa.usedHours||0)+' 小时 · 剩余 '+Math.max(0,Number(pa.totalHours||0)-Number(pa.usedHours||0))+' 小时</small></div></div>').join(''):'<span class="label">暂无课时包。</span>')+'</div></div>';
     p.appendChild(sec);
   }
+  function renderAcademic(){
+    const p=document.getElementById('academicPage');if(!p)return;
+    const r=rel(),ss=allStudents(),ls=r.lessons||[];
+    const old=p.querySelector('#academicDynamic');if(old)old.remove();
+    const sec=document.createElement('section');sec.className='section';sec.id='academicDynamic';
+    const rows=[];
+    ss.forEach(s=>(s.academicYears||[]).forEach(y=>rows.push({s,y})));
+    sec.innerHTML='<div class="section-head"><div><h2>学生学年学业档案</h2><span class="label">每位学生、每个学年独立保存，不覆盖历史记录</span></div></div><div class="card">'+(rows.length?rows.map(({s,y})=>{const subjects=String(y.subjects||'').split(/[·,，、]/).map(x=>x.trim()).filter(Boolean);const count=ls.filter(l=>String(l.studentId)===String(s.id)&&String(l.academicYearId)===String(y.id)).length;return '<div class="event"><div><strong>'+esc(s.name)+' · '+esc(y.year)+' · '+esc(y.grade||'未设置')+'</strong><small>学校：'+esc(y.school||'未填写')+' · 路径：'+esc(y.path||'未设置')+' · 科目：'+esc(subjects.join('、')||'尚未设置')+' · 课程记录：'+count+' 项</small></div><span class="pill">'+esc(y.stage||'')+'</span></div>'}).join(''):'<span class="label">目前还没有学生学年记录。</span>')+'</div>';
+    p.appendChild(sec);
+  }
   function renderDashboard(){
     const p=document.getElementById('dashboard');if(!p)return;const r=rel(),ls=r.lessons||[],today=new Date().toISOString().slice(0,10),todayLs=ls.filter(x=>x.date===today&&x.status!=='已取消');
     const ms=p.querySelectorAll('.metric');if(ms[0])ms[0].textContent=todayLs.length;if(ms[1])ms[1].textContent=(r.transportTasks||[]).filter(x=>x.date===today).length;if(ms[2])ms[2].textContent=(r.tasks||[]).filter(x=>x.status!=='已完成').length;if(ms[3])ms[3].textContent=ls.filter(x=>x.status==='已安排').length;
@@ -830,10 +840,10 @@ buttons.forEach(b=>b.addEventListener('click',()=>{X.style.display='none';const 
   }
   function observe(){
     const ids=['dashboard','educationPage','familyAffairsPage','tasksPage','pendingPage','familyReportPage'];
-    const obs=new MutationObserver(()=>{ids.forEach(id=>{const e=document.getElementById(id);if(e&&getComputedStyle(e).display!=='none'){if(id==='dashboard')renderDashboard();if(id==='educationPage')renderEducation();if(id==='transportPage')renderTransport();if(['familyAffairsPage','tasksPage','pendingPage','familyReportPage'].includes(id))renderManagementPages()}})});
+    const obs=new MutationObserver(()=>{ids.forEach(id=>{const e=document.getElementById(id);if(e&&getComputedStyle(e).display!=='none'){if(id==='dashboard')renderDashboard();if(id==='educationPage')renderEducation();if(id==='academicPage')renderAcademic();if(id==='transportPage')renderTransport();if(['familyAffairsPage','tasksPage','pendingPage','familyReportPage'].includes(id))renderManagementPages()}})});
     ids.forEach(id=>{const e=document.getElementById(id);if(e)obs.observe(e,{attributes:true,attributeFilter:['style']})});
   }
-  function init(){ensureStore();renderManagementPages();renderDashboard();renderEducation();renderTransport();observe()}
+  function init(){ensureStore();renderManagementPages();renderDashboard();renderEducation();renderAcademic();renderTransport();observe()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>\n</body></html>
