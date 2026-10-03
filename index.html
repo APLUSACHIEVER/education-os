@@ -405,11 +405,18 @@
  window.renderEducationStudents=render;
  function getStudentById(id){
    const list=read();
-   return list.find(s=>s.id===id)||null;
+   return list.find(s=>String(s.id)===String(id))||null;
+ }
+ function fr(rows){
+   return (rows||[]).map(function(x){
+     return '<div style="display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:1px solid var(--border)"><span class="label">'+esc(x[0])+'</span><span style="text-align:right">'+(x[1]||'')+'</span></div>';
+   }).join('');
  }
  function showStudentProfile(id){
-   const s=getStudentById(id); if(!s)return;
+   const s=getStudentById(id);
+   if(!s){ alert('找不到该学生档案，请先刷新学生列表。'); return; }
    const detail=document.getElementById('studentDetailContent');
+   if(!detail){ alert('学生档案内容区域未加载，请刷新页面。'); return; }
    const stageName=s.stage==='Secondary'?'中学':s.stage==='JC'?'初级学院':'小学';
    const years=s.stage==='Primary'
      ? [s.schoolYear+' · '+(s.grade||'当前年级'),(Number(s.schoolYear||2026)+1)+' · 下一学年']
