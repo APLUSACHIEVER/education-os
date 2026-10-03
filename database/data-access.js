@@ -23,7 +23,14 @@
   async function rest(path,options={}){
     const c=cfg();
     if(!enabled()) throw new Error('数据库未配置');
-    const res=await fetch(c.url.replace(/\/$/,'')+'/rest/v1/'+path,{...options,headers:{...headers(),...(options.headers||{})}});
+    let res=await fetch(c.url.replace(/\/$/,'')+'/rest/v1/'+path,{...options,headers:{...headers(),...(options.headers||{})}});
+    if(res.status===401 && window.EducationOSAuth?.refreshSession){
+      const refreshed=await window.EducationOSAuth.refreshSession();
+      if(refreshed){
+        const fresh=cfg();
+        res=await fetch(fresh.url.replace(/\/$/,'')+'/rest/v1/'+path,{...options,headers:{...headers(),...(options.headers||{})}});
+      }
+    }
     if(!res.ok) throw new Error('数据库请求失败 '+res.status+' '+await res.text());
     return res.status===204?null:res.json();
   }
