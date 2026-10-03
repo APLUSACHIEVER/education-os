@@ -378,6 +378,16 @@
    cards.innerHTML=html||'<div class="card label">目前还没有学生资料，请点击「＋ 新增学生」建立第一个学生档案。</div>';
    const childCards=document.getElementById('studentCardsChild');
    if(childCards)childCards.innerHTML=html||'<div class="card label">目前还没有学生资料。</div>';
+   [cards,childCards].forEach(box=>{
+     if(!box)return;
+     box.querySelectorAll('[data-student-id]').forEach(card=>{
+       card.addEventListener('click',function(e){
+         if(e.target.closest('button,a,input,select,textarea'))return;
+         const id=card.getAttribute('data-student-id');
+         if(id)showStudentProfile(id);
+       });
+     });
+   });
  }
  function open(){refresh();modal.style.display='block';document.body.style.overflow='hidden'}
  function hide(){modal.style.display='none';document.body.style.overflow=''}
