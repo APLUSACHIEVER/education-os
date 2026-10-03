@@ -56,6 +56,7 @@ dialog input,dialog select{width:100%}
   <div class="card"><h2>🗓 每周日程</h2><div class="scroll"><div class="week" id="week"></div></div>
     <div class="legend">红框＝同一学生时间重叠（必须调整）；橙色虚线＝不同学生同时有课（家长接送需注意）。点击卡片可编辑。</div></div>
   <div class="card"><h2>💰 课费包</h2><div class="scroll" id="fees"></div></div>
+<div class="legend" style="text-align:center;margin:18px 0 6px">教育管家 · 2026.10.03</div>
 </main>
 
 <dialog id="dlg"><div id="dlgBody"></div></dialog>
@@ -63,7 +64,7 @@ dialog input,dialog select{width:100%}
 <script>
 const DAYS=['周一','周二','周三','周四','周五','周六','周日'];
 const COLORS=['#3b6cf6','#e8590c','#2f9e44','#ae3ec9','#0c8599','#d6336c'];
-let db={students:[],items:[]};   // items: {id,stu,type,name,day,s,e,fee,note}
+let db={students:[],items:[]};   // items: {id,stu,type,name,days,s,e,fee,note}
 let sel='all';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -120,7 +121,7 @@ function render(){
   if(paid.size){h+='<div class="legend">明细（同一科目一周多节只计一次课费包）：</div><table>'+[...paid.values()].sort((a,b)=>b.fee-a.fee).map(o=>`<tr><td>${esc((stu(o.i.stu)||{}).name)}</td><td>${o.i.type}：${esc(o.i.name)}</td><td class="n">${money(o.fee)}</td></tr>`).join('')+'</table>'}
   $('fees').innerHTML=h;
 }
-// fee: same student+type+name counted once (a subject may meet several days; fee is monthly per subject)
+// 课费包：同一学生+类型+名称只计算一次，多天上课共用同一个课费包
 function sum(sid,type){
   const m=new Map();
   db.items.filter(i=>i.stu===sid&&i.type===type&&i.fee>0).forEach(i=>m.set(i.name,Math.max(m.get(i.name)||0,i.fee)));
@@ -135,7 +136,7 @@ function openItem(id){
   <label>学生</label><select id="f_stu">${db.students.map(s=>`<option value="${s.id}" ${s.id===it.stu?'selected':''}>${esc(s.name)}</option>`).join('')}</select>
   <label>类型</label><select id="f_type">${['补习','活动'].map(t=>`<option ${t===it.type?'selected':''}>${t}</option>`).join('')}</select>
   <label>科目 / 活动名称</label><input id="f_name" value="${esc(it.name)}" placeholder="如：数学、钢琴">
-  <label>星期（可多选）</label><div class="weekday-picker" id="f_day">${DAYS.map((d,i)=>\`<button type="button" class="${selectedDays.includes(i)?'on':''}" data-day="${i}">${d}</button>\`).join('')}</div><div class="legend">点击星期选择或取消；可以同时选择多个星期。课费包只需填写一次。</div>
+  <label>星期（可多选）</label><div class="weekday-picker" id="f_day">${DAYS.map((d,i)=>`<button type="button" class="${selectedDays.includes(i)?'on':''}" data-day="${i}">${d}</button>`).join('')}</div><div class="legend">点击星期选择或取消；可以同时选择多个星期。课费包只需填写一次。</div>
   <label>开始 / 结束时间</label><div class="row"><input type="time" id="f_s" value="${it.s}" style="width:48%"><input type="time" id="f_e" value="${it.e}" style="width:48%"></div>
   <label>课费包（元，同一科目多天上课只填一次即可，其余留空）</label><input type="number" min="0" id="f_fee" value="${it.fee}">
   <label>备注（老师/地点）</label><input id="f_note" value="${esc(it.note)}">
