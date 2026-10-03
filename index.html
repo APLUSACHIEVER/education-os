@@ -2163,3 +2163,46 @@ window.addEventListener('load',bind);setTimeout(bind,100);
 window.educationOSRefreshStudentSelectors=fillStudentSelectors;
 })();
 </script>
+
+<!-- student-subjects-final-fix-v2 -->
+<style>
+#studentModal #studentSubjects{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:9px;min-height:54px}
+#studentModal .os-subject-choice{display:flex;align-items:center;gap:10px;min-height:50px;padding:11px 13px;border:1px solid var(--border);border-radius:11px;background:var(--surface2);cursor:pointer;user-select:none;transition:.15s}
+#studentModal .os-subject-choice:hover{border-color:var(--green);transform:translateY(-1px)}
+#studentModal .os-subject-choice:has(input:checked){border-color:var(--green);background:var(--green2);box-shadow:0 0 0 1px var(--green) inset}
+#studentModal .os-subject-choice input{width:19px;height:19px;flex:none;accent-color:var(--green);cursor:pointer;margin:0}
+#studentModal .os-subject-empty{grid-column:1/-1;padding:15px;border:1px dashed var(--border);border-radius:11px;color:var(--muted);text-align:center}
+@media(max-width:700px){#studentModal #studentSubjects{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){#studentModal #studentSubjects{grid-template-columns:1fr}}
+</style>
+<script>
+(function(){
+'use strict';
+const subjectMap={
+ Primary:['英语','数学','科学','中文','马来文','泰米尔文','美术','音乐','体育','品格与公民教育'],
+ Secondary:['英语','数学','Additional Mathematics','科学','Biology','Chemistry','Physics','Combined Science','中文','Higher Chinese','马来文','Higher Malay','泰米尔文','Higher Tamil','Social Studies','Geography','History','Literature in English','Combined Humanities','Art','Design & Technology','Food & Consumer Education','Nutrition & Food Science','Music','Computing','Principles of Accounts'],
+ JC:['General Paper','Project Work','母语','中文','马来文','泰米尔文','English Language & Linguistics','Mathematics','Further Mathematics','Biology','Chemistry','Physics','Computing','Economics','Geography','History','Literature in English','China Studies','Art','Music','Theatre Studies & Drama','Principles of Accounting','Management of Business']
+};
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function renderSubjects(){
+ const stage=document.getElementById('studentStage'),grade=document.getElementById('studentGrade'),box=document.getElementById('studentSubjects');if(!stage||!grade||!box)return;
+ const old=Array.from(box.querySelectorAll('input[name="subjectChoice"]:checked')).map(x=>x.value);
+ let opts=(subjectMap[stage.value]||[]).slice();
+ const n=parseInt(String(grade.value).match(/\\d+/)?.[0]||'1',10);
+ if(stage.value==='Primary'&&n<3)opts=opts.filter(x=>x!=='科学');
+ if(!opts.length){box.innerHTML='<div class="os-subject-empty">请先选择学段和年级，系统会显示可选择的修读科目。</div>';return;}
+ box.innerHTML=opts.map((x,i)=>{const safe=esc(x);return '<label class="os-subject-choice"><input type="checkbox" name="subjectChoice" value="'+safe+'"><span>'+safe+'</span></label>';}).join('');
+ old.forEach(v=>{const cb=Array.from(box.querySelectorAll('input[name="subjectChoice"]')).find(x=>x.value===v);if(cb)cb.checked=true;});
+ const note=document.getElementById('studentSubjectsNote');if(note)note.textContent='可多选。请勾选学生当前实际修读的科目。';
+}
+function bind(){
+ const stage=document.getElementById('studentStage'),grade=document.getElementById('studentGrade');if(!stage||!grade)return;
+ if(!stage.dataset.subjectFix){stage.dataset.subjectFix='1';stage.addEventListener('change',()=>setTimeout(renderSubjects,10));}
+ if(!grade.dataset.subjectFix){grade.dataset.subjectFix='1';grade.addEventListener('change',()=>setTimeout(renderSubjects,10));}
+ renderSubjects();
+}
+window.educationOSRenderStudentSubjects=renderSubjects;
+document.addEventListener('click',e=>{if(e.target.closest('#addStudentBtn,.student-edit-btn,[data-edit-student]'))setTimeout(bind,30);},true);
+window.addEventListener('load',bind);setTimeout(bind,150);
+})();
+</script>
