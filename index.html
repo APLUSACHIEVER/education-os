@@ -97,7 +97,7 @@ function conflicts(){
   const bad=new Set(),warn=new Set(),msgs=[],seen=new Set();
   const allDates=[...new Set(db.items.flatMap(i=>itemDates(i)))].sort();
   for(const date of allDates){
-    const L=db.items.filter(i=>itemDates(i).includes(date));
+    const L=db.items.filter(i=>statusOf(i,date)!=='cancelled'&&itemDates(i).includes(date));
     for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){
       const a=L[i],b=L[j];if(!overlap(a,b))continue;
       const same=a.stu===b.stu,na=(stu(a.stu)||{}).name||'?',nb=(stu(b.stu)||{}).name||'?';
@@ -179,11 +179,12 @@ function openItem(id){
   <div id="dateArea" class="months date-picker"></div>
   <div class="summary-box"><div><span>计划</span><strong id="sumTotal">0</strong>节</div><div><span>已上</span><strong id="sumAtt">0</strong>节</div><div><span>剩余</span><strong id="sumRemain">0</strong>节</div></div>
   <div class="progress"><i id="sumBar" style="width:0%"></i></div>
-  <label>课时包总费用${it.type==='补习'?'（必填）':'（如有费用请填写）'}</label><input type="number" min="0" id="f_fee" value="${it.fee}">
+  <label id="feeLabel">课时包总费用${it.type==='补习'?'（必填）':'（如有费用请填写）'}</label><input type="number" min="0" id="f_fee" value="${it.fee}">
   <label>备注（老师/地点）</label><input id="f_note" value="${esc(it.note)}">
   ${id?'<label>已选课程的上课记录</label><div id="statusArea"></div>':''}
   <div class="row" style="margin-top:14px;justify-content:space-between"><div>${id?'<button id="f_del">删除</button>':''}</div><div class="row"><button id="f_cancel">取消</button><button class="pri" id="f_ok">保存课程</button></div></div>`;
   $('dlg').showModal();
+  $('f_type').onchange=()=>{$('feeLabel').textContent='课时包总费用'+($('f_type').value==='补习'?'（必填）':'（如有费用请填写）')};
   const updateSummary=()=>{const temp={...it,dates:[...selected]};const st=sessionStats(temp);$('sumTotal').textContent=st.total;$('sumAtt').textContent=st.attended;$('sumRemain').textContent=st.remaining;$('sumBar').style.width=(st.total?Math.round(st.attended/st.total*100):0)+'%';if($('statusArea')){$('statusArea').innerHTML=[...selected].sort().map(d=>`<div class="row" style="justify-content:space-between;margin:4px 0"><span>${fmtDate(d)}</span><select data-status="${d}"><option value="scheduled" ${statusOf(it,d)==='scheduled'?'selected':''}>未上</option><option value="attended" ${statusOf(it,d)==='attended'?'selected':''}>已上</option><option value="leave" ${statusOf(it,d)==='leave'?'selected':''}>请假</option><option value="cancelled" ${statusOf(it,d)==='cancelled'?'selected':''}>取消</option></select></div>`).join('');$('statusArea').querySelectorAll('[data-status]').forEach(s=>s.onchange=()=>{it.statusByDate[s.dataset.status]=s.value;drawDates();updateSummary()})}};
   $('applyRange').onclick=()=>{base=$('range_s').value;end=$('range_e').value;if(!base||!end||base>end)return alert('日期范围不正确');drawDates()};
   $('clearDates').onclick=()=>{selected.clear();drawDates();updateSummary()};
@@ -194,7 +195,7 @@ function openItem(id){
     const dates=[...selected].sort(),fee=Math.max(0,+$('f_fee').value||0);
     if(!$('f_name').value.trim())return alert('请填写课程名称');
     if(!dates.length)return alert('请至少选择一个课程日期');
-    if(!it.type||it.type==='补习'&&fee<=0)return alert('补习课程必须填写课时包费用');
+    if($('f_type').value==='补习'&&fee<=0)return alert('补习课程必须填写课时包费用');
     const o={id:id||uid(),stu:$('f_stu').value,type:$('f_type').value,name:$('f_name').value.trim(),dates,s:$('f_s').value,e:$('f_e').value,fee,note:$('f_note').value.trim(),statusByDate:it.statusByDate||{}};
     if(!o.s||!o.e||o.e<=o.s)return alert('结束时间必须晚于开始时间');
     db.items=id?db.items.map(i=>i.id===id?o:i):[...db.items,o];save();render();$('dlg').close();
@@ -206,7 +207,12 @@ function openStu(){
     `<div class="row" style="margin-top:12px"><input id="newStu" placeholder="新学生姓名" style="flex:1"><button class="pri" id="addStu">添加</button></div><div class="row" style="margin-top:12px;justify-content:flex-end"><button id="stuClose">完成</button></div>`;
     $('stuClose').onclick=()=>{$('dlg').close();render()};
     $('addStu').onclick=()=>{const n=$('newStu').value.trim();if(!n)return;db.students.push({id:uid(),name:n,color:COLORS[db.students.length%COLORS.length]});save();draw()};
-    $('dlgBody').querySelectorAll('[data-ren]').forEach(b=>b.onclick=()=>{const s=stu(b.dataset.ren),n=prompt('新名字',s.name);if(n&&n.trim()){s.name=n.trim();save();draw()}});
+    $('dlgBody').querySelectorAll('[data-ren]').forEach(b=>b.onclick=()=>{
+      const s=stu(b.dataset.ren);
+      $('dlgBody').innerHTML='<h2>修改学生姓名</h2><label>学生姓名</label><input id="renameStu" value="'+esc(s.name)+'"><div class="row" style="justify-content:flex-end;margin-top:12px"><button id="renameCancel">取消</button><button class="pri" id="renameOk">保存</button></div>';
+      $('renameCancel').onclick=draw;
+      $('renameOk').onclick=()=>{const n=$('renameStu').value.trim();if(!n)return alert('请填写学生姓名');s.name=n;save();draw()};
+    });
     $('dlgBody').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const s=stu(b.dataset.del);if(confirm(`删除「${s.name}」及其所有安排？`)){db.students=db.students.filter(x=>x.id!==s.id);db.items=db.items.filter(i=>i.stu!==s.id);if(sel===s.id)sel='all';save();draw()}});
   };
   draw();$('dlg').showModal();
