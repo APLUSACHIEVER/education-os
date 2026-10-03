@@ -52,6 +52,15 @@ dialog input,dialog select{width:100%}
   </div>
   <div class="row" id="filter" style="margin-bottom:12px"></div>
 
+  <div class="card" id="studentPanel" hidden>
+  <div class="bar" style="margin-bottom:8px"><h2>👨‍👩‍👧 学生管理</h2><button type="button" id="studentClose">收起</button></div>
+  <div id="studentList"></div>
+  <div class="row" style="margin-top:10px">
+    <input id="studentNameInput" placeholder="输入学生姓名" style="flex:1">
+    <button type="button" class="pri" id="studentAddBtn">添加学生</button>
+  </div>
+</div>
+
   <div class="card"><h2>📌 今天</h2><div id="todayList" class="today-list"></div></div>
   <div class="card"><h2>⚠️ 冲突检查</h2><div id="conf"></div></div>
   <div class="card"><div class="bar" style="margin-bottom:8px"><h2>📅 全家周日程</h2><div class="row"><button id="prevWeek">← 上一周</button><button id="thisWeek">本周</button><button id="nextWeek">下一周 →</button></div></div><div class="week-head"><div class="week-range" id="weekRange"></div><div class="legend">默认显示全部孩子，可点击上方孩子筛选。</div></div><div class="week-stats" id="weekStats"></div><div class="scroll"><div class="week" id="week"></div></div><div class="legend">红框＝同一学生时间重叠（必须调整）；橙色虚线＝不同学生同时有课（家长接送需注意）。点击课程卡片可直接编辑。</div></div>
@@ -205,23 +214,57 @@ function openItem(id){
     db.items=id?db.items.map(i=>i.id===id?o:i):[...db.items,o];save();render();$('dlg').close();
   };
 }
-function openStu(){
-  const draw=()=>{
-    $('dlgBody').innerHTML=`<h2>学生管理</h2>`+(db.students.map(s=>`<div class="row" style="justify-content:space-between;margin:6px 0"><span><span class="dot" style="--c:${s.color}"></span>${esc(s.name)}</span><span class="row"><button data-ren="${s.id}">改名</button><button data-del="${s.id}">删除</button></span></div>`).join('')||'<div class="ok">还没有学生</div>')+
-    `<div class="row" style="margin-top:12px"><input id="newStu" placeholder="输入学生姓名" style="flex:1"><button type="button" class="pri" id="addStu">添加学生</button></div><div class="row" style="margin-top:12px;justify-content:flex-end"><button id="stuClose">完成</button></div>`;
-    $('stuClose').onclick=()=>{$('dlg').close();render()};
-    $('addStu').onclick=()=>{const input=$('newStu');const n=input.value.trim();if(!n){input.focus();return}const newStudent={id:uid(),name:n,color:COLORS[db.students.length%COLORS.length]};db.students.push(newStudent);save();sel=newStudent.id;draw();setTimeout(()=>{$('newStu')?.focus()},0)};
-    $('newStu').onkeydown=e=>{if(e.key==='Enter')$('addStu').click()};
-    $('dlgBody').querySelectorAll('[data-ren]').forEach(b=>b.onclick=()=>{
-      const s=stu(b.dataset.ren);
-      $('dlgBody').innerHTML='<h2>修改学生姓名</h2><label>学生姓名</label><input id="renameStu" value="'+esc(s.name)+'"><div class="row" style="justify-content:flex-end;margin-top:12px"><button id="renameCancel">取消</button><button class="pri" id="renameOk">保存</button></div>';
-      $('renameCancel').onclick=draw;
-      $('renameOk').onclick=()=>{const n=$('renameStu').value.trim();if(!n)return alert('请填写学生姓名');s.name=n;save();draw()};
-    });
-    $('dlgBody').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const s=stu(b.dataset.del);if(confirm(`删除「${s.name}」及其所有安排？`)){db.students=db.students.filter(x=>x.id!==s.id);db.items=db.items.filter(i=>i.stu!==s.id);if(sel===s.id)sel='all';save();draw()}});
-  };
-  draw();$('dlg').showModal();
+function renderStudentPanel(){
+  const panel=$('studentPanel'),list=$('studentList');
+  if(!panel||!list)return;
+  list.innerHTML=db.students.map(s=>`<div class="row click-row" style="justify-content:space-between;padding:7px 4px;border-bottom:1px solid var(--bd)">
+    <span><span class="dot" style="--c:${s.color}"></span>${esc(s.name)}</span>
+    <span class="row"><button type="button" data-sren="${s.id}">改名</button><button type="button" data-sdel="${s.id}">删除</button></span>
+  </div>`).join('')||'<div class="ok" style="padding:8px 0">还没有学生，请先添加。</div>';
+  list.querySelectorAll('[data-sren]').forEach(b=>{
+    b.onclick=()=>{
+      const s=stu(b.dataset.sren); if(!s)return;
+      const row=b.closest('.row');
+      row.innerHTML=`<input id="rename_${s.id}" value="${esc(s.name)}" style="flex:1"><button type="button" class="pri" id="save_${s.id}">保存</button><button type="button" id="cancel_${s.id}">取消</button>`;
+      $(`save_${s.id}`).onclick=()=>{
+        const n=$(`rename_${s.id}`).value.trim();
+        if(!n){$(`rename_${s.id}`).focus();return}
+        s.name=n;save();renderStudentPanel();render();
+      };
+      $(`cancel_${s.id}`).onclick=renderStudentPanel;
+      $(`rename_${s.id}`).focus();
+    };
+  });
+  list.querySelectorAll('[data-sdel]').forEach(b=>b.onclick=()=>{
+    const s=stu(b.dataset.sdel); if(!s)return;
+    if(confirm(`删除「${s.name}」及其所有安排？`)){
+      db.students=db.students.filter(x=>x.id!==s.id);
+      db.items=db.items.filter(i=>i.stu!==s.id);
+      if(sel===s.id)sel='all';
+      save();renderStudentPanel();render();
+    }
+  });
 }
+function openStu(){
+  const panel=$('studentPanel');
+  if(!panel)return;
+  panel.hidden=!panel.hidden;
+  if(!panel.hidden){
+    renderStudentPanel();
+    panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+    setTimeout(()=>$('studentNameInput')?.focus(),100);
+  }
+}
+$('studentAddBtn').onclick=()=>{
+  const input=$('studentNameInput');
+  const n=input.value.trim();
+  if(!n){input.focus();return}
+  const newStudent={id:uid(),name:n,color:COLORS[db.students.length%COLORS.length]};
+  db.students.push(newStudent);save();sel=newStudent.id;input.value='';
+  renderStudentPanel();render();input.focus();
+};
+$('studentNameInput').onkeydown=e=>{if(e.key==='Enter')$('studentAddBtn').click()};
+$('studentClose').onclick=()=>{$('studentPanel').hidden=true};
 
 $('addBtn').onclick=()=>openItem();
 $('stuBtn').onclick=openStu;
