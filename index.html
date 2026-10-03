@@ -80,6 +80,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const money=n=>'S
+
 function load(){try{const t=localStorage.getItem('edu-butler');if(t){const d=JSON.parse(t);if(d&&Array.isArray(d.students)&&Array.isArray(d.items))db=d}}catch(e){}}
 function save(){try{localStorage.setItem('edu-butler',JSON.stringify(db))}catch(e){}}
 const stu=id=>db.students.find(s=>s.id===id);
@@ -283,7 +284,8 @@ load();render();
 if(!db.students.length)openStu();
 </script>
 </body>
-</html>+(Math.round(n*100)/100).toLocaleString();
+</html>
++(Math.round(n*100)/100).toLocaleString();
 
 function load(){try{const t=localStorage.getItem('edu-butler');if(t){const d=JSON.parse(t);if(d&&Array.isArray(d.students)&&Array.isArray(d.items))db=d}}catch(e){}}
 function save(){try{localStorage.setItem('edu-butler',JSON.stringify(db))}catch(e){}}
@@ -468,7 +470,6 @@ $('studentAddBtn').onclick=()=>{
   renderStudentPanel();render();input.focus();
 };
 $('studentNameInput').onkeydown=e=>{if(e.key==='Enter')$('studentAddBtn').click()};
-$('addFeeBtn').onclick=()=>openItem();
 $('studentClose').onclick=()=>{$('studentPanel').hidden=true};
 
 $('addBtn').onclick=()=>openItem();
