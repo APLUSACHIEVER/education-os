@@ -155,9 +155,12 @@
     x.year_label=x.year_label||x.year; x.start_date=x.start_date||x.startDate||new Date().getFullYear()+'-01-01'; x.end_date=x.end_date||x.endDate||new Date().getFullYear()+'-12-31';
     x.education_level=x.education_level||((x.stage||'Primary')==='Secondary'?'secondary':(x.stage||'Primary')==='JC'?'jc':'primary');
     x.grade_code=x.grade_code||x.grade||'P1'; delete x.year; delete x.startDate; delete x.endDate; delete x.stage; delete x.grade;
-    return upsert('academic_years',x);
+    const id=x.id; return rest('academic_years'+(id?'?id=eq.'+encodeURIComponent(id):''),{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify(x)});
   }
-  async function upsertStudentSubject(row){return upsert('student_subjects',row);}
+  async function upsertStudentSubject(row){
+    const x={...row}; const id=x.id;
+    return rest('student_subjects'+(id?'?id=eq.'+encodeURIComponent(id):''),{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify(x)});
+  }
 
   function deviceKey(){
     let x=localStorage.getItem(DEVICE);
