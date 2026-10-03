@@ -26,7 +26,7 @@ button.chip.on{background:var(--tx);color:var(--bg);border-color:var(--tx)}
 .week{display:grid;grid-template-columns:repeat(7,minmax(130px,1fr));gap:6px;min-width:930px}
 .day h3{margin:0 0 6px;font-size:14px;text-align:center;color:var(--mut)}
 .item{border-left:5px solid var(--c);background:var(--bg);border-radius:8px;padding:6px 8px;margin-bottom:6px;font-size:13px;cursor:pointer}
-.item.bad{background:var(--badbg);outline:2px solid var(--bad)}.item.warn{background:var(--warnbg);outline:2px dashed var(--warn)}
+.item.bad{background:var(--badbg);outline:2px solid var(--bad)}.item.warn{background:var(--warnbg);outline:2px dashed var(--warn)}.item.cancel{opacity:.45;text-decoration:line-through}.today-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px}.today-empty{padding:10px;text-align:center;color:var(--mut);background:var(--bg);border-radius:8px}.click-row{cursor:pointer}.click-row:hover{background:var(--bg)}
 .item b{display:block}.item small{color:var(--mut)}
 table{width:100%;border-collapse:collapse}th,td{padding:6px 8px;border-bottom:1px solid var(--bd);text-align:left}td.n,th.n{text-align:right}
 tr.tot td{font-weight:700}
@@ -52,6 +52,7 @@ dialog input,dialog select{width:100%}
   </div>
   <div class="row" id="filter" style="margin-bottom:12px"></div>
 
+  <div class="card"><h2>📌 今天</h2><div id="todayList" class="today-list"></div></div>
   <div class="card"><h2>⚠️ 冲突检查</h2><div id="conf"></div></div>
   <div class="card"><div class="bar" style="margin-bottom:8px"><h2>📅 全家周日程</h2><div class="row"><button id="prevWeek">← 上一周</button><button id="thisWeek">本周</button><button id="nextWeek">下一周 →</button></div></div><div class="week-head"><div class="week-range" id="weekRange"></div><div class="legend">默认显示全部孩子，可点击上方孩子筛选。</div></div><div class="week-stats" id="weekStats"></div><div class="scroll"><div class="week" id="week"></div></div><div class="legend">红框＝同一学生时间重叠（必须调整）；橙色虚线＝不同学生同时有课（家长接送需注意）。点击课程卡片可直接编辑。</div></div>
   <div class="card"><h2>💰 课费包</h2><div class="scroll" id="fees"></div></div>
@@ -114,7 +115,10 @@ function render(){
   $('filter').innerHTML='<button class="chip '+(sel==='all'?'on':'')+'" data-s="all">全部</button>'+
     db.students.map(s=>'<button class="chip '+(sel===s.id?'on':'')+'" data-s="'+s.id+'"><span class="dot" style="--c:'+s.color+'"></span>'+esc(s.name)+'</button>').join('');
   const c=conflicts();
-  $('conf').innerHTML=c.msgs.length?c.msgs.map(m=>'<div class="alert '+(m.bad?'bad':'warn')+'">'+esc(m.t)+'</div>').join(''):'<div class="ok">✅ 暂无冲突</div>';
+  $('conf').innerHTML=c.msgs.length?'<div class="alert '+(c.msgs.some(m=>m.bad)?'bad':'warn')+'">'+(c.msgs.some(m=>m.bad)?'⚠️ 有 '+c.msgs.filter(m=>m.bad).length+' 个时间冲突':'🟠 有 '+c.msgs.length+' 个接送提醒')+'</div>'+c.msgs.slice(0,8).map(m=>'<div class="alert '+(m.bad?'bad':'warn')+'">'+esc(m.t)+'</div>').join(''):'<div class="ok">✅ 暂无冲突</div>';
+  const today=iso(new Date().getFullYear(),new Date().getMonth()+1,new Date().getDate());
+  const todayItems=db.items.flatMap(i=>itemDates(i).filter(d=>d===today).map(d=>({i,d}))).sort((a,b)=>a.i.s.localeCompare(b.i.s));
+  $('todayList').innerHTML=todayItems.length?todayItems.map(({i,d})=>{const s=stu(i.stu)||{name:'?',color:'#888'},st=sessionStats(i),status=statusOf(i,d),sl={scheduled:'未上',attended:'已上',leave:'请假',cancelled:'取消'}[status]||'未上';return '<div class="item '+(status==='cancelled'?'cancel':'')+'" style="--c:'+s.color+'" data-id="'+i.id+'"><b>'+i.s+'-'+i.e+'　'+esc(i.name)+'</b><small>'+esc(s.name)+' · '+i.type+' · '+sl+' · 剩余 '+st.remaining+' 节'+(i.fee?' · '+money(i.fee):'')+(i.note?'<br>'+esc(i.note):'')+'</small></div>'}).join(''):'<div class="today-empty">今天没有课程或活动</div>';
 
   const dates=weekDates(), today=iso(new Date().getFullYear(),new Date().getMonth()+1,new Date().getDate());
   $('weekRange').textContent=weekRangeText();
@@ -139,7 +143,7 @@ function render(){
   const groups=new Map();
   vis.filter(i=>i.type==='补习'||i.fee>0).forEach(i=>{const k=i.stu+'|'+i.type+'|'+i.name;const o=groups.get(k)||{i,fee:0};o.fee=Math.max(o.fee,i.fee||0);groups.set(k,o)});
   let total=0;
-  [...groups.values()].sort((a,b)=>a.i.name.localeCompare(b.i.name)).forEach(o=>{const st=sessionStats(o.i);total+=o.fee;h+='<tr><td>'+esc((stu(o.i.stu)||{}).name)+'</td><td>'+esc(o.i.name)+'</td><td>'+st.attended+' / '+st.total+' 节 <span class="legend">（剩 '+st.remaining+'）</span></td><td class="n">'+money(o.fee)+'</td></tr>'});
+  [...groups.values()].sort((a,b)=>a.i.name.localeCompare(b.i.name)).forEach(o=>{const st=sessionStats(o.i);total+=o.fee;h+='<tr class="click-row" data-fee-id="'+o.i.id+'" title="点击查看课程">'+'<td>'+esc((stu(o.i.stu)||{}).name)+'</td><td>'+esc(o.i.name)+'</td><td>'+st.attended+' / '+st.total+' 节 <span class="legend">（剩 '+st.remaining+'）</span></td><td class="n">'+money(o.fee)+'</td></tr>'});
   h+='<tr class="tot"><td colspan="3">课费包合计</td><td class="n">'+money(total)+'</td></tr></table>';
   $('fees').innerHTML=h||'<div class="ok">暂无课费包</div>';
 }
@@ -222,6 +226,8 @@ $('addBtn').onclick=()=>openItem();
 $('stuBtn').onclick=openStu;
 $('filter').onclick=e=>{const b=e.target.closest('[data-s]');if(b){sel=b.dataset.s;render()}};
 $('week').onclick=e=>{const b=e.target.closest('[data-id]');if(b)openItem(b.dataset.id)};
+$('todayList').onclick=e=>{const b=e.target.closest('[data-id]');if(b)openItem(b.dataset.id)};
+$('fees').onclick=e=>{const b=e.target.closest('[data-fee-id]');if(b)openItem(b.dataset.feeId)};
 $('prevWeek').onclick=()=>{weekStart=new Date(weekStart);weekStart.setDate(weekStart.getDate()-7);render()};
 $('thisWeek').onclick=()=>{weekStart=startOfWeek(new Date());render()};
 $('nextWeek').onclick=()=>{weekStart=new Date(weekStart);weekStart.setDate(weekStart.getDate()+7);render()};
