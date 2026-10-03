@@ -65,7 +65,7 @@ dialog input,dialog select{width:100%}
   <div class="card"><h2>⚠️ 冲突检查</h2><div id="conf"></div></div>
   <div class="card"><div class="bar" style="margin-bottom:8px"><h2>📅 全家周日程</h2><div class="row"><button id="prevWeek">← 上一周</button><button id="thisWeek">本周</button><button id="nextWeek">下一周 →</button></div></div><div class="week-head"><div class="week-range" id="weekRange"></div><div class="legend">默认显示全部孩子，可点击上方孩子筛选。</div></div><div class="week-stats" id="weekStats"></div><div class="scroll"><div class="week" id="week"></div></div><div class="legend">红框＝同一学生时间重叠（必须调整）；橙色虚线＝不同学生同时有课（家长接送需注意）。点击课程卡片可直接编辑。</div></div>
   <div class="card"><div class="bar" style="margin-bottom:8px"><h2>💰 课程 / 课时包</h2><button type="button" class="pri" id="addFeeBtn">＋ 新增课时包</button></div><div class="legend">每个课程都可以单独设置课时日期、上课时间和费用；点击下面的课程即可修改。</div><div class="scroll" id="fees"></div></div>
-<div class="legend" style="text-align:center;margin:18px 0 6px">APLUS ACHIEVER 家庭教育管理平台 · 2026.10.03</div>
+<div class="legend" style="text-align:center;margin:18px 0 6px">教育管家 · 2026.10.03</div>
 </main>
 
 <dialog id="dlg"><div id="dlgBody"></div></dialog>
@@ -192,12 +192,12 @@ function openItem(id){
   <div id="dateArea" class="months date-picker"></div>
   <div class="summary-box"><div><span>计划</span><strong id="sumTotal">0</strong>节</div><div><span>已上</span><strong id="sumAtt">0</strong>节</div><div><span>剩余</span><strong id="sumRemain">0</strong>节</div></div>
   <div class="progress"><i id="sumBar" style="width:0%"></i></div>
-  <label id="feeLabel">课时包总费用${it.type==='补习'?'（必填）':'（可选）'}</label><div class="row"><span style="padding:8px 0;font-weight:600">S$</span><input type="number" min="0" step="0.01" id="f_fee" value="${it.fee}" placeholder="例如 320" style="flex:1"></div>
+  <label id="feeLabel">课时包总费用${it.type==='补习'?'（必填）':'（如有费用请填写）'}</label><input type="number" min="0" id="f_fee" value="${it.fee}">
   <label>备注（老师/地点）</label><input id="f_note" value="${esc(it.note)}">
   ${id?'<label>已选课程的上课记录</label><div id="statusArea"></div>':''}
   <div class="row" style="margin-top:14px;justify-content:space-between"><div>${id?'<button id="f_del">删除</button>':''}</div><div class="row"><button id="f_cancel">取消</button><button class="pri" id="f_ok">保存课程</button></div></div>`;
   $('dlg').showModal();
-  $('f_type').onchange=()=>{$('feeLabel').textContent='课时包总费用'+($('f_type').value==='补习'?'（必填）':'（可选）')};
+  $('f_type').onchange=()=>{$('feeLabel').textContent='课时包总费用'+($('f_type').value==='补习'?'（必填）':'（如有费用请填写）')};
   const updateSummary=()=>{const temp={...it,dates:[...selected]};const st=sessionStats(temp);$('sumTotal').textContent=st.total;$('sumAtt').textContent=st.attended;$('sumRemain').textContent=st.remaining;$('sumBar').style.width=(st.total?Math.round(st.attended/st.total*100):0)+'%';if($('statusArea')){$('statusArea').innerHTML=[...selected].sort().map(d=>`<div class="row" style="justify-content:space-between;margin:4px 0"><span>${fmtDate(d)}</span><select data-status="${d}"><option value="scheduled" ${statusOf(it,d)==='scheduled'?'selected':''}>未上</option><option value="attended" ${statusOf(it,d)==='attended'?'selected':''}>已上</option><option value="leave" ${statusOf(it,d)==='leave'?'selected':''}>请假</option><option value="cancelled" ${statusOf(it,d)==='cancelled'?'selected':''}>取消</option></select></div>`).join('');$('statusArea').querySelectorAll('[data-status]').forEach(s=>s.onchange=()=>{it.statusByDate[s.dataset.status]=s.value;drawDates();updateSummary()})}};
   $('applyRange').onclick=()=>{base=$('range_s').value;end=$('range_e').value;if(!base||!end||base>end)return alert('日期范围不正确');drawDates()};
   $('clearDates').onclick=()=>{selected.clear();drawDates();updateSummary()};
@@ -285,7 +285,7 @@ if(!db.students.length)openStu();
 </script>
 </body>
 </html>
-+(Math.round(n*100)/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
++(Math.round(n*100)/100).toLocaleString();
 
 function load(){try{const t=localStorage.getItem('edu-butler');if(t){const d=JSON.parse(t);if(d&&Array.isArray(d.students)&&Array.isArray(d.items))db=d}}catch(e){}}
 function save(){try{localStorage.setItem('edu-butler',JSON.stringify(db))}catch(e){}}
