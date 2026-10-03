@@ -246,6 +246,7 @@
   const backdrop=q('familyEditBackdrop'),form=q('familyEditForm');
   function syncDisplay(){
     q('familyNameDisplay').textContent=familyData.name||'未填写家庭名称';
+    try{const ss=JSON.parse(localStorage.getItem('educationOS_students')||'[]');const count=ss.filter(x=>x&&x.status!=='已归档').length;const el=q('familyStudentCountDisplay');if(el)el.textContent=count+' 位';}catch(e){const el=q('familyStudentCountDisplay');if(el)el.textContent='0 位';}
     q('familyContactDisplay').textContent=familyData.contact||'未填写';
     q('familyStatusDisplay').textContent=familyData.status||'未设置';
     const d=familyData.date?new Date(familyData.date+'T00:00:00'):null;
@@ -313,9 +314,13 @@
       btn.addEventListener('click',function(){
         const p=btn.getAttribute('data-page');
         ids.forEach(function(id){const el=document.getElementById(id);if(el)el.style.display='none';});
-        if((p==='客户 / 家庭档案'||p==='学生完整档案')&&window.renderEducationStudents)window.renderEducationStudents(); if(p==='客户 / 家庭档案'&&window.renderFamilyStudentSummary){window.renderFamilyStudentSummary();setTimeout(window.renderFamilyStudentSummary,0);} if(p==='家庭日程')renderFamilyScheduleFromLessons(); if(p==='学校 / DSA规划')renderPlanning();
+        if((p==='客户 / 家庭档案'||p==='学生完整档案')&&window.renderEducationStudents)window.renderEducationStudents(); if(p==='家庭日程')renderFamilyScheduleFromLessons(); if(p==='学校 / DSA规划')renderPlanning();
         const target=document.getElementById(map[p]||'placeholder');
         if(target)target.style.display='block';
+        if(p==='客户 / 家庭档案'){
+          if(window.renderEducationStudents)window.renderEducationStudents();
+          if(window.renderFamilyStudentSummary){window.renderFamilyStudentSummary();setTimeout(window.renderFamilyStudentSummary,20);}
+        }
         if(p==='学业管理'){const m=document.getElementById('moeSubjectExplorer');if(m)m.style.display='block';}
         document.querySelectorAll('.nav button').forEach(function(x){x.classList.remove('active');});
         btn.classList.add('active');
@@ -509,7 +514,8 @@
   function hideAll(){
     ['dashboard','familyPage','childProfile','dsaPlanning','familySchedule','transportPage','educationPage','academicPage','feesPage','moeSubjectExplorer','placeholder','studentDetailPage'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   }
-  function subjectList(stage,grade,path,subjectText){
+
+  window.renderFamilyStudentSummary=renderFamilyStudentSummary;  function subjectList(stage,grade,path,subjectText){
     const raw=String(subjectText||'').split(/[·,，、]/).map(x=>x.trim()).filter(Boolean);
     if(raw.length)return raw;
     if(stage==='Primary'){
