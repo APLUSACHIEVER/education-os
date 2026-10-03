@@ -91,7 +91,7 @@
   function logout(){const c=cfg();delete c.accessToken;delete c.refreshToken;delete c.accessTokenIssuedAt;delete c.familyId;c.enabled=false;saveCfg(c);render();}
   function init(){
     const btn=document.getElementById('osAuthButton');if(btn)btn.onclick=open;
-    window.EducationOSAuth={open,logout,context};
+    window.EducationOSAuth={open,logout,context,refreshSession};
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
