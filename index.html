@@ -2133,3 +2133,33 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   },true);
 })();
 </script>
+
+<!-- student-select-final-fix-v1 -->
+<script>
+(function(){
+'use strict';
+function fillStudentSelectors(){
+ const stage=document.getElementById('studentStage'),grade=document.getElementById('studentGrade'),path=document.getElementById('studentPath');
+ if(!stage||!grade||!path)return;
+ const currentGrade=grade.value,currentPath=path.value;
+ const map={
+  Primary:{grades:['小学一年级','小学二年级','小学三年级','小学四年级','小学五年级','小学六年级'],paths:['小学普通课程']},
+  Secondary:{grades:['中学一年级','中学二年级','中学三年级','中学四年级'],paths:['IP','Mainstream PG 3','Mainstream PG 2','Mainstream PG 1']},
+  JC:{grades:['初级学院一年级','初级学院二年级'],paths:['JC']}
+ };
+ const o=map[stage.value]||map.Primary;
+ grade.innerHTML='<option value="">请选择年级</option>'+o.grades.map((x,i)=>'<option value="'+(stage.value==='Primary'?'Primary '+(i+1):stage.value==='Secondary'?'Secondary '+(i+1):'JC '+(i+1))+'">'+x+'</option>').join('');
+ path.innerHTML='<option value="">请选择学习路径</option>'+o.paths.map(x=>'<option value="'+x+'">'+x+'</option>').join('');
+ if(currentGrade && Array.from(grade.options).some(x=>x.value===currentGrade))grade.value=currentGrade;
+ if(currentPath && Array.from(path.options).some(x=>x.value===currentPath))path.value=currentPath;
+}
+function bind(){
+ const stage=document.getElementById('studentStage');if(!stage)return;
+ fillStudentSelectors();
+ if(!stage.dataset.selectFix){stage.dataset.selectFix='1';stage.addEventListener('change',function(){setTimeout(fillStudentSelectors,0);});}
+}
+document.addEventListener('click',function(e){if(e.target.closest('#addStudentBtn,.student-edit-btn,[data-edit-student]'))setTimeout(bind,20);},true);
+window.addEventListener('load',bind);setTimeout(bind,100);
+window.educationOSRefreshStudentSelectors=fillStudentSelectors;
+})();
+</script>
