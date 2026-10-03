@@ -46,6 +46,8 @@
       }catch(e){console.warn('同步失败:',table,e);}
     }
     await pullAcademic(next);
+    try{ next.subject_master=await rest('subject_master?select=id,education_level,subject_code,subject_name&limit=2000'); }catch(e){ console.warn('同步失败: subject_master',e); }
+    try{ next.schools=await rest('schools?select=id,name,school_type,education_level,status&limit=2000'); }catch(e){ console.warn('同步失败: schools',e); }
     writeCache(next);
     if(next.students) localStorage.setItem(STU,JSON.stringify(next.students.map(mapStudentRemoteToLocal)));
     if(next.courses||next.lessons||next.tasks||next.payments) localStorage.setItem(REL,JSON.stringify(buildRelations(next)));
