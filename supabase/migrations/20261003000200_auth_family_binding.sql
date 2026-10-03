@@ -74,3 +74,28 @@ $$;
 
 revoke all on function public.education_os_auth_context() from public;
 grant execute on function public.education_os_auth_context() to authenticated;
+
+
+create or replace function public.education_os_create_family(p_family_name text,p_display_name text default null)
+returns uuid language plpgsql security definer set search_path=public as $$
+declare v_app_user_id uuid; v_family_id uuid;
+begin
+  if auth.uid() is null then raise exception '必须先登录家庭账号'; end if;
+  if nullif(trim(p_family_name),'') is null then raise exception '家庭名称不能为空'; end if;
+  insert into public.app_users(auth_user_id,display_name,email)
+  values(auth.uid(),nullif(trim(p_display_name),''),(select email from auth.users where id=auth.uid()))
+  on conflict(auth_user_id) do update set display_name=coalesce(excluded.display_name,app_users.display_name),email=coalesce(excluded.email,app_users.email),updated_at=now()
+  returning id into v_app_user_id;
+  if exists(select 1 from public.family_members where user_id=v_app_user_id and status='active') then
+    select family_id into v_family_id from public.family_members where user_id=v_app_user_id and status='active' order by is_primary desc,created_at limit 1;
+    return v_family_id;
+  end if;
+  insert into public.families(name,primary_contact_name,primary_contact_email)
+  values(trim(p_family_name),nullif(trim(p_display_name),''),(select email from auth.users where id=auth.uid())) returning id into v_family_id;
+  insert into public.family_settings(family_id) values(v_family_id);
+  insert into public.family_members(family_id,user_id,relationship,role_code,is_primary,status,joined_at)
+  values(v_family_id,v_app_user_id,'家长','owner',true,'active',now());
+  return v_family_id;
+end $$;
+revoke all on function public.education_os_create_family(text,text) from public;
+grant execute on function public.education_os_create_family(text,text) to authenticated;
