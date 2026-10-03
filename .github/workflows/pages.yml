@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+  # 某些通过 GitHub API/应用写入的提交不会触发 push workflow，
+  # 因此增加定时部署，确保 main 与 Pages 最终一致。
+  schedule:
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 permissions:
