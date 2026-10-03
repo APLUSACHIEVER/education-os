@@ -294,12 +294,8 @@
       }).join('');
       wrap.innerHTML=lessonEvents+(transportEvents?'<div class="event"><div class="time">接送</div><div><strong>今日接送安排</strong><small>以下接送任务来自接送管理，不重复录入。</small></div><span class="pill">'+transportToday.length+' 项</span></div>'+transportEvents:'');
     }
-    const map={
-      '首页':'dashboard','客户 / 家庭档案':'familyPage','学生完整档案':'childProfile',
-      '家庭日程':'familySchedule','接送管理':'transportPage','教育管理':'educationPage',
-      '学业管理':'academicPage','学科设置':'subjectSettingsPage','学校 / DSA规划':'planningPage','家庭费用':'feesPage','家庭事务':'familyAffairsPage','任务':'tasksPage','待处理':'pendingPage','家庭报告':'familyReportPage'
-    };
-    const ids=['dashboard','familyPage','childProfile','studentDetailPage','dsaPlanning','familySchedule','transportPage','educationPage','academicPage','feesPage','moeSubjectExplorer','subjectSettingsPage','familyAffairsPage','tasksPage','pendingPage','familyReportPage','planningPage','placeholder'];
+    const map={'首页':'dashboard','学生':'childProfile','补习课程':'educationPage','活动':'educationPage','日程安排':'familySchedule','接送安排':'transportPage','费用':'feesPage'};
+    const ids=['dashboard','childProfile','studentDetailPage','familySchedule','transportPage','educationPage','feesPage','placeholder'];
     const title=document.getElementById('pageTitle'),sub=document.getElementById('pageSub');
     document.querySelectorAll('.nav button').forEach(function(btn){
       btn.addEventListener('click',function(){
@@ -1783,8 +1779,8 @@ const se=e.target.closest('[data-edit-student]');if(se){e.preventDefault();e.sto
  function dashboardLinks(){
    const map={dashLessons:'家庭日程',dashTransport:'接送管理',dashPending:'待处理',dashPackages:'教育管理'};
    Object.keys(map).forEach(id=>{const n=document.getElementById(id);if(n&&!n.dataset.linked){n.closest('.card').style.cursor='pointer';n.closest('.card').dataset.linked='1';n.closest('.card').onclick=()=>document.querySelector('.nav button[data-page="'+map[id]+'"]')?.click();}});
-   document.querySelectorAll('#dashTimeline .event').forEach(e=>{if(e.dataset.linked)return;e.dataset.linked='1';e.style.cursor='pointer';e.onclick=()=>document.querySelector('.nav button[data-page="家庭日程"]')?.click();});
-   document.querySelectorAll('#dashFinance .finance-row').forEach(e=>{if(e.dataset.linked)return;e.dataset.linked='1';e.style.cursor='pointer';e.onclick=()=>document.querySelector('.nav button[data-page="家庭费用"]')?.click();});
+   document.querySelectorAll('#dashTimeline .event').forEach(e=>{if(e.dataset.linked)return;e.dataset.linked='1';e.style.cursor='pointer';e.onclick=()=>document.querySelector('.nav button[data-page="日程安排"]')?.click();});
+   document.querySelectorAll('#dashFinance .finance-row').forEach(e=>{if(e.dataset.linked)return;e.dataset.linked='1';e.style.cursor='pointer';e.onclick=()=>document.querySelector('.nav button[data-page="费用"]')?.click();});
  }
  document.addEventListener('click',e=>{const p=e.target.closest('[data-payment-id]');if(p){e.preventDefault();showPayment(p.dataset.paymentId);}});
  window.addEventListener('educationOS:changed',()=>{setTimeout(()=>{renderPayments();dashboardLinks()},60)});
@@ -2242,18 +2238,14 @@ window.addEventListener('load',bind);setTimeout(bind,150);
       }).join('');
       wrap.innerHTML=lessonEvents+(transportEvents?'<div class="event"><div class="time">接送</div><div><strong>今日接送安排</strong><small>以下接送任务来自接送管理，不重复录入。</small></div><span class="pill">'+transportToday.length+' 项</span></div>'+transportEvents:'');
     }
-    const map={
-      '首页':'dashboard','客户 / 家庭档案':'familyPage','学生完整档案':'childProfile',
-      '家庭日程':'familySchedule','接送管理':'transportPage','教育管理':'educationPage',
-      '学业管理':'academicPage','学科设置':'subjectSettingsPage','学校 / DSA规划':'planningPage','家庭费用':'feesPage','家庭事务':'familyAffairsPage','任务':'tasksPage','待处理':'pendingPage','家庭报告':'familyReportPage'
-    };
-    const ids=['dashboard','familyPage','childProfile','studentDetailPage','dsaPlanning','familySchedule','transportPage','educationPage','academicPage','feesPage','moeSubjectExplorer','subjectSettingsPage','familyAffairsPage','tasksPage','pendingPage','familyReportPage','planningPage','placeholder'];
+    const map={'首页':'dashboard','学生':'childProfile','补习课程':'educationPage','活动':'educationPage','日程安排':'familySchedule','接送安排':'transportPage','费用':'feesPage'};
+    const ids=['dashboard','childProfile','studentDetailPage','familySchedule','transportPage','educationPage','feesPage','placeholder'];
     const title=document.getElementById('pageTitle'),sub=document.getElementById('pageSub');
     document.querySelectorAll('.nav button').forEach(function(btn){
       btn.addEventListener('click',function(){
         const p=btn.getAttribute('data-page');
         ids.forEach(function(id){const el=document.getElementById(id);if(el)el.style.display='none';});
-        if((p==='客户 / 家庭档案'||p==='学生完整档案')&&window.renderEducationStudents)window.renderEducationStudents(); if(p==='家庭日程')renderFamilyScheduleFromLessons(); if(p==='学校 / DSA规划')renderPlanning();
+        if((p==='客户 / 家庭档案'||p==='学生完整档案')&&window.renderEducationStudents)window.renderEducationStudents(); if(p==='日程安排')renderFamilyScheduleFromLessons(); if(p==='学校 / DSA规划')renderPlanning();
         const target=document.getElementById(map[p]||'placeholder');
         if(target)target.style.display='block';
         if(p==='客户 / 家庭档案'){
@@ -3732,8 +3724,8 @@ const se=e.target.closest('[data-edit-student]');if(se){e.preventDefault();e.sto
  function dashboardLinks(){
    const map={dashLessons:'家庭日程',dashTransport:'接送管理',dashPending:'待处理',dashPackages:'教育管理'};
    Object.keys(map).forEach(id=>{const n=document.getElementById(id);if(n&&!n.dataset.linked){n.closest('.card').style.cursor='pointer';n.closest('.card').dataset.linked='1';n.closest('.card').onclick=()=>document.querySelector('.nav button[data-page="'+map[id]+'"]')?.click();}});
-   document.querySelectorAll('#dashTimeline .event').forEach(e=>{if(e.dataset.linked)return;e.dataset.linked='1';e.style.cursor='pointer';e.onclick=()=>document.querySelector('.nav button[data-page="家庭日程"]')?.click();});
-   document.querySelectorAll('#dashFinance .finance-row').forEach(e=>{if(e.dataset.linked)return;e.dataset.linked='1';e.style.cursor='pointer';e.onclick=()=>document.querySelector('.nav button[data-page="家庭费用"]')?.click();});
+   document.querySelectorAll('#dashTimeline .event').forEach(e=>{if(e.dataset.linked)return;e.dataset.linked='1';e.style.cursor='pointer';e.onclick=()=>document.querySelector('.nav button[data-page="日程安排"]')?.click();});
+   document.querySelectorAll('#dashFinance .finance-row').forEach(e=>{if(e.dataset.linked)return;e.dataset.linked='1';e.style.cursor='pointer';e.onclick=()=>document.querySelector('.nav button[data-page="费用"]')?.click();});
  }
  document.addEventListener('click',e=>{const p=e.target.closest('[data-payment-id]');if(p){e.preventDefault();showPayment(p.dataset.paymentId);}});
  window.addEventListener('educationOS:changed',()=>{setTimeout(()=>{renderPayments();dashboardLinks()},60)});
