@@ -424,6 +424,7 @@
    box.querySelectorAll('.family-student-edit').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();if(window.educationOSEditStudent)window.educationOSEditStudent(b.dataset.id)});
  }
 
+ window.renderFamilyStudentSummary=renderFamilyStudentSummary;
  function getStudentById(id){
    const list=read();
    return list.find(s=>String(s.id)===String(id))||null;
@@ -515,7 +516,7 @@
     ['dashboard','familyPage','childProfile','dsaPlanning','familySchedule','transportPage','educationPage','academicPage','feesPage','moeSubjectExplorer','placeholder','studentDetailPage'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   }
 
-  window.renderFamilyStudentSummary=renderFamilyStudentSummary;  function subjectList(stage,grade,path,subjectText){
+  function subjectList(stage,grade,path,subjectText){
     const raw=String(subjectText||'').split(/[·,，、]/).map(x=>x.trim()).filter(Boolean);
     if(raw.length)return raw;
     if(stage==='Primary'){
