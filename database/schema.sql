@@ -909,3 +909,62 @@ drop policy if exists family_access_legacy_data_snapshots on legacy_data_snapsho
 create policy family_access_legacy_data_snapshots on legacy_data_snapshots
 for all using (education_os_has_family_access(family_id))
 with check (education_os_has_family_access(family_id));
+
+
+-- 15. 从属表 RLS：通过学生 / 学年反查家庭，避免绕过家庭隔离
+alter table student_contacts enable row level security;
+alter table academic_years enable row level security;
+alter table student_subjects enable row level security;
+alter table student_school_history enable row level security;
+
+drop policy if exists family_access_student_contacts on student_contacts;
+create policy family_access_student_contacts on student_contacts
+for all using (
+  exists(select 1 from students s
+         where s.id=student_contacts.student_id
+           and education_os_has_family_access(s.family_id))
+) with check (
+  exists(select 1 from students s
+         where s.id=student_contacts.student_id
+           and education_os_has_family_access(s.family_id))
+);
+
+drop policy if exists family_access_academic_years on academic_years;
+create policy family_access_academic_years on academic_years
+for all using (
+  exists(select 1 from students s
+         where s.id=academic_years.student_id
+           and education_os_has_family_access(s.family_id))
+) with check (
+  exists(select 1 from students s
+         where s.id=academic_years.student_id
+           and education_os_has_family_access(s.family_id))
+);
+
+drop policy if exists family_access_student_subjects on student_subjects;
+create policy family_access_student_subjects on student_subjects
+for all using (
+  exists(select 1 from academic_years ay
+         join students s on s.id=ay.student_id
+         where ay.id=student_subjects.academic_year_id
+           and education_os_has_family_access(s.family_id))
+) with check (
+  exists(select 1 from academic_years ay
+         join students s on s.id=ay.student_id
+         where ay.id=student_subjects.academic_year_id
+           and education_os_has_family_access(s.family_id))
+);
+
+drop policy if exists family_access_student_school_history on student_school_history;
+create policy family_access_student_school_history on student_school_history
+for all using (
+  exists(select 1 from academic_years ay
+         join students s on s.id=ay.student_id
+         where ay.id=student_school_history.academic_year_id
+           and education_os_has_family_access(s.family_id))
+) with check (
+  exists(select 1 from academic_years ay
+         join students s on s.id=ay.student_id
+         where ay.id=student_school_history.academic_year_id
+           and education_os_has_family_access(s.family_id))
+);
