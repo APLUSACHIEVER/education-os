@@ -44,6 +44,11 @@
   async function render(){
     const box=document.getElementById('osAuthBox'),body=document.getElementById('osAuthBody');if(!body)return;
     const c=cfg();
+    if(!c.url||!c.publishableKey){
+      body.innerHTML='<div class="label">第一次使用请先填写 Supabase 项目地址与 Publishable Key。密钥不会上传到 GitHub。</div><input id="osDbUrl" placeholder="项目地址，例如 https://xxxx.supabase.co" style="width:100%;padding:11px;margin-top:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text)"><input id="osDbKey" placeholder="Publishable Key" style="width:100%;padding:11px;margin-top:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text)"><button class="primary" id="osDbSave" style="margin-top:14px;width:100%">保存数据库连接</button>';
+      document.getElementById('osDbSave').onclick=()=>{const url=document.getElementById('osDbUrl').value.trim(),key=document.getElementById('osDbKey').value.trim();if(!url||!key){alert('请填写完整');return;}saveCfg({...c,url,publishableKey:key});render();};
+      return;
+    }
     if(c.accessToken){
       try{
         const x=await context(c.accessToken);
