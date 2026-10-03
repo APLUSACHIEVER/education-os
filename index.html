@@ -766,7 +766,7 @@
   }
   function renderTransport(){
     const p=document.getElementById('transportPage');if(!p)return;
-    const r=ensureStore(), ss=allStudents(), tasks=r.transportTasks||[], drivers=r.drivers||[], vehicles=r.vehicles||[], temps=r.temporaryArrangements||[], conflicts=r.conflicts||[];
+    const r=ensureStore(), ss=allStudents(), tasks=r.transportTasks||[], drivers=r.drivers||[], vehicles=r.vehicles||[], temps=r.temporaryArrangements||[], conflicts=r.conflicts||[], payments=Array.isArray(r.payments)?r.payments:[];
     const escT=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
     const studentName=id=>ss.find(x=>String(x.id)===String(id))?.name||'未设置学生';
     const driverName=id=>drivers.find(x=>String(x.id)===String(id))?.name||'未设置司机';
