@@ -208,9 +208,10 @@ function openItem(id){
 function openStu(){
   const draw=()=>{
     $('dlgBody').innerHTML=`<h2>学生管理</h2>`+(db.students.map(s=>`<div class="row" style="justify-content:space-between;margin:6px 0"><span><span class="dot" style="--c:${s.color}"></span>${esc(s.name)}</span><span class="row"><button data-ren="${s.id}">改名</button><button data-del="${s.id}">删除</button></span></div>`).join('')||'<div class="ok">还没有学生</div>')+
-    `<div class="row" style="margin-top:12px"><input id="newStu" placeholder="新学生姓名" style="flex:1"><button class="pri" id="addStu">添加</button></div><div class="row" style="margin-top:12px;justify-content:flex-end"><button id="stuClose">完成</button></div>`;
+    `<div class="row" style="margin-top:12px"><input id="newStu" placeholder="输入学生姓名" style="flex:1"><button type="button" class="pri" id="addStu">添加学生</button></div><div class="row" style="margin-top:12px;justify-content:flex-end"><button id="stuClose">完成</button></div>`;
     $('stuClose').onclick=()=>{$('dlg').close();render()};
-    $('addStu').onclick=()=>{const n=$('newStu').value.trim();if(!n)return;db.students.push({id:uid(),name:n,color:COLORS[db.students.length%COLORS.length]});save();draw()};
+    $('addStu').onclick=()=>{const input=$('newStu');const n=input.value.trim();if(!n){input.focus();return}const newStudent={id:uid(),name:n,color:COLORS[db.students.length%COLORS.length]};db.students.push(newStudent);save();sel=newStudent.id;draw();setTimeout(()=>{$('newStu')?.focus()},0)};
+    $('newStu').onkeydown=e=>{if(e.key==='Enter')$('addStu').click()};
     $('dlgBody').querySelectorAll('[data-ren]').forEach(b=>b.onclick=()=>{
       const s=stu(b.dataset.ren);
       $('dlgBody').innerHTML='<h2>修改学生姓名</h2><label>学生姓名</label><input id="renameStu" value="'+esc(s.name)+'"><div class="row" style="justify-content:flex-end;margin-top:12px"><button id="renameCancel">取消</button><button class="pri" id="renameOk">保存</button></div>';
