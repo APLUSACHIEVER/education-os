@@ -1,46 +1,76 @@
-# 教育管家｜数据库
+# 教育管家｜数据库第一版完整状态
 
-这是教育管家的正式数据层基础，采用 **PostgreSQL / Supabase 兼容结构**。
+本目录现在是 **Education OS 第一版完整数据库基线**，目标数据库为 PostgreSQL / Supabase。
 
-## 当前原则
+## 当前状态
 
-1. 家庭是最高数据隔离单位：所有核心业务表都有 `family_id`。
-2. 学生是教育数据核心：学生 → 学年 → 学科。
-3. Master 数据与家庭交易数据分开。
-4. 课程、课次、课时包、费用、教师反馈互相可追溯。
-5. 接送、司机、车辆、临时安排与课程共享学生和日期时间。
-6. 冲突由课程、接送、临时安排等业务记录产生。
-7. 教师反馈可以进入学业记录，也可以生成待处理任务。
-8. 学生时间线不单独重复存储，而是由业务记录汇总产生。
-9. 家庭报告同样从统一业务数据实时计算。
-10. 暂时不把真实家庭数据写入 GitHub。
+数据库已经覆盖四层：
 
-## 文件
+1. **家庭基础层**
+   - families / family_settings
+   - app_users / family_members
+   - roles / permissions / role_permissions
 
-- `schema.sql`：正式数据库表、关系、索引。
-- `seed.sql`：Master 学科基础数据。
-- 后续：把现有浏览器 `localStorage` 数据适配到这些表，再接 Supabase/PostgreSQL。
+2. **教育主数据层**
+   - education_pathways / grade_master / subject_master
+   - schools
+   - academic_terms / school_calendar_events
 
-## Secondary
+3. **家庭业务层**
+   - students / student_contacts
+   - academic_years / student_subjects / student_school_history
+   - teachers / courses / packages / lessons / teacher_feedback
+   - drivers / vehicles / transport_tasks / temporary_arrangements / conflicts
+   - tasks / academic_goals / assessments / progress_records
+   - payments / activities / calendar_events
+   - school_options / dsa_plans / dsa_activities
+   - reminders / notifications / file_assets
 
-Secondary 保留：
-- IP
-- Mainstream / SBB
-- G1 / G2 / G3（历史/过渡路径兼容）
-- PG1 / PG2 / PG3
+4. **平台治理与报表层**
+   - audit_logs / sync_checkpoints / legacy_data_snapshots
+   - v_student_timeline
+   - v_package_balance
+   - v_family_monthly_finance
+   - v_family_dashboard
+   - updated_at 自动维护
+   - Supabase RLS 家庭隔离
 
-并保留 Additional Mathematics、Humanities、Art、D&T、Food & Consumer Education、Computing、Elective / Combined Subject 等字段。
+## 新加坡教育路径
 
-POLY 与 MI 不纳入教育管家主数据模型。
+- Primary：P1–P6
+- Secondary：S1–S4
+- Secondary Full SBB：G1 / G2 / G3 作为学科能力层级
+- Secondary IP
+- Secondary Mainstream PG3 / PG2 / PG1
+- JC1–JC2
+- **不建立 POLY / MI 模块**
 
-## 数据迁移原则
+学生实际就读学校记录在 academic year / school history；schools 表作为公共 Master，后续可补官方学校资料。
 
-现有前端：
-`educationOS_students`
-`educationOS_relations`
-`educationOS.familyProfile`
+## 前端迁移策略
 
-未来迁移到数据库时，不改变前端业务逻辑，只增加一个数据访问层：
-**页面 → 数据访问层 → PostgreSQL/Supabase**
+当前网页仍以 localStorage 为运行主数据源，避免在没有真实数据库连接时破坏现有功能。
 
-这样以后可以把本地数据、云端数据库、登录权限逐步切换，而不需要重写整个教育管家。
+已加入 `database/data-access.js`，提供数据库配置、连接状态、本地数据快照备份、同步入口，以及数据库未配置时的 localStorage 兼容。
+
+迁移顺序：
+
+**localStorage → 本地快照桥接 → 家庭/学生 → 教育管理 → 接送/冲突 → 学业 → 费用 → 日历/DSA → 报表 → 完全数据库化**
+
+## Supabase 部署
+
+执行 `schema.sql`，然后执行 `seed.sql`。
+
+数据库启用后，需要建立 Supabase Auth 用户，并把对应 `auth_user_id` 映射到：
+
+`app_users → family_members → families`
+
+浏览器端只使用 publishable key，不把 secret key / service-role key 放进网页。
+
+RLS 已按家庭隔离设计；上线前还需要在 Supabase Data API 中授予客户端所需的最小权限。
+
+## 第二阶段：真实数据库接入
+
+当前尚未绑定具体 Supabase Project，也尚未建立实际 Auth 登录、localStorage ID → 数据库 UUID 的全量映射，以及所有页面的异步数据库 CRUD。
+
+这些是生产接入工作，不是数据库结构缺失。
