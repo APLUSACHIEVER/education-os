@@ -968,3 +968,251 @@ for all using (
          where ay.id=student_school_history.academic_year_id
            and education_os_has_family_access(s.family_id))
 );
+
+
+-- 16. Supabase 安全加固：仅 authenticated，视图跟随 RLS
+create or replace function education_os_has_family_access(target_family uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.family_members fm
+    join public.app_users au on au.id=fm.user_id
+    where fm.family_id=target_family
+      and fm.status='active'
+      and au.auth_user_id=(select auth.uid())
+  );
+$$;
+
+do $$
+declare t text;
+begin
+  foreach t in array array[
+    'families','family_settings','students','teachers','courses','packages','lessons',
+    'teacher_feedback','drivers','vehicles','transport_tasks','temporary_arrangements',
+    'conflicts','tasks','academic_goals','assessments','progress_records','payments',
+    'activities','family_members','calendar_events','school_options','dsa_plans',
+    'dsa_activities','reminders','notifications','audit_logs','file_assets',
+    'sync_checkpoints','legacy_data_snapshots'
+  ] loop
+    execute format('drop policy if exists %I on %I','family_access_'||t,t);
+    execute format('drop policy if exists %I on %I','family_select_'||t,t);
+    execute format('drop policy if exists %I on %I','family_insert_'||t,t);
+    execute format('drop policy if exists %I on %I','family_update_'||t,t);
+    execute format('drop policy if exists %I on %I','family_delete_'||t,t);
+
+    execute format(
+      'create policy %I on %I for select to authenticated using ((select public.education_os_has_family_access(family_id)))',
+      'family_select_'||t,t
+    );
+    execute format(
+      'create policy %I on %I for insert to authenticated with check ((select public.education_os_has_family_access(family_id)))',
+      'family_insert_'||t,t
+    );
+    execute format(
+      'create policy %I on %I for update to authenticated using ((select public.education_os_has_family_access(family_id))) with check ((select public.education_os_has_family_access(family_id)))',
+      'family_update_'||t,t
+    );
+    execute format(
+      'create policy %I on %I for delete to authenticated using ((select public.education_os_has_family_access(family_id)))',
+      'family_delete_'||t,t
+    );
+  end loop;
+end $$;
+
+-- 从属表：通过学生 / 学年验证家庭
+drop policy if exists family_access_student_contacts on student_contacts;
+drop policy if exists family_select_student_contacts on student_contacts;
+drop policy if exists family_insert_student_contacts on student_contacts;
+drop policy if exists family_update_student_contacts on student_contacts;
+drop policy if exists family_delete_student_contacts on student_contacts;
+
+create policy family_select_student_contacts on student_contacts for select to authenticated using (
+  exists(select 1 from public.students s where s.id=student_contacts.student_id
+    and (select public.education_os_has_family_access(s.family_id)))
+);
+create policy family_insert_student_contacts on student_contacts for insert to authenticated with check (
+  exists(select 1 from public.students s where s.id=student_contacts.student_id
+    and (select public.education_os_has_family_access(s.family_id)))
+);
+create policy family_update_student_contacts on student_contacts for update to authenticated using (
+  exists(select 1 from public.students s where s.id=student_contacts.student_id
+    and (select public.education_os_has_family_access(s.family_id)))
+) with check (
+  exists(select 1 from public.students s where s.id=student_contacts.student_id
+    and (select public.education_os_has_family_access(s.family_id)))
+);
+create policy family_delete_student_contacts on student_contacts for delete to authenticated using (
+  exists(select 1 from public.students s where s.id=student_contacts.student_id
+    and (select public.education_os_has_family_access(s.family_id)))
+);
+
+drop policy if exists family_access_academic_years on academic_years;
+drop policy if exists family_select_academic_years on academic_years;
+drop policy if exists family_insert_academic_years on academic_years;
+drop policy if exists family_update_academic_years on academic_years;
+drop policy if exists family_delete_academic_years on academic_years;
+
+create policy family_select_academic_years on academic_years for select to authenticated using (
+  exists(select 1 from public.students s where s.id=academic_years.student_id
+    and (select public.education_os_has_family_access(s.family_id)))
+);
+create policy family_insert_academic_years on academic_years for insert to authenticated with check (
+  exists(select 1 from public.students s where s.id=academic_years.student_id
+    and (select public.education_os_has_family_access(s.family_id)))
+);
+create policy family_update_academic_years on academic_years for update to authenticated using (
+  exists(select 1 from public.students s where s.id=academic_years.student_id
+    and (select public.education_os_has_family_access(s.family_id)))
+) with check (
+  exists(select 1 from public.students s where s.id=academic_years.student_id
+    and (select public.education_os_has_family_access(s.family_id)))
+);
+create policy family_delete_academic_years on academic_years for delete to authenticated using (
+  exists(select 1 from public.students s where s.id=academic_years.student_id
+    and (select public.education_os_has_family_access(s.family_id)))
+);
+
+drop policy if exists family_access_student_subjects on student_subjects;
+drop policy if exists family_select_student_subjects on student_subjects;
+drop policy if exists family_insert_student_subjects on student_subjects;
+drop policy if exists family_update_student_subjects on student_subjects;
+drop policy if exists family_delete_student_subjects on student_subjects;
+
+create policy family_select_student_subjects on student_subjects for select to authenticated using (
+  exists(select 1 from public.academic_years ay join public.students s on s.id=ay.student_id
+    where ay.id=student_subjects.academic_year_id
+    and (select public.education_os_has_family_access(s.family_id)))
+);
+create policy family_insert_student_subjects on student_subjects for insert to authenticated with check (
+  exists(select 1 from public.academic_years ay join public.students s on s.id=ay.student_id
+    where ay.id=student_subjects.academic_year_id
+    and (select public.education_os_has_family_access(s.family_id)))
+);
+create policy family_update_student_subjects on student_subjects for update to authenticated using (
+  exists(select 1 from public.academic_years ay join public.students s on s.id=ay.student_id
+    where ay.id=student_subjects.academic_year_id
+    and (select public.education_os_has_family_access(s.family_id)))
+) with check (
+  exists(select 1 from public.academic_years ay join public.students s on s.id=ay.student_id
+    where ay.id=student_subjects.academic_year_id
+    and (select public.education_os_has_family_access(s.family_id)))
+);
+create policy family_delete_student_subjects on student_subjects for delete to authenticated using (
+  exists(select 1 from public.academic_years ay join public.students s on s.id=ay.student_id
+    where ay.id=student_subjects.academic_year_id
+    and (select public.education_os_has_family_access(s.family_id)))
+);
+
+drop policy if exists family_access_student_school_history on student_school_history;
+drop policy if exists family_select_student_school_history on student_school_history;
+drop policy if exists family_insert_student_school_history on student_school_history;
+drop policy if exists family_update_student_school_history on student_school_history;
+drop policy if exists family_delete_student_school_history on student_school_history;
+
+create policy family_select_student_school_history on student_school_history for select to authenticated using (
+  exists(select 1 from public.academic_years ay join public.students s on s.id=ay.student_id
+    where ay.id=student_school_history.academic_year_id
+    and (select public.education_os_has_family_access(s.family_id)))
+);
+create policy family_insert_student_school_history on student_school_history for insert to authenticated with check (
+  exists(select 1 from public.academic_years ay join public.students s on s.id=ay.student_id
+    where ay.id=student_school_history.academic_year_id
+    and (select public.education_os_has_family_access(s.family_id)))
+);
+create policy family_update_student_school_history on student_school_history for update to authenticated using (
+  exists(select 1 from public.academic_years ay join public.students s on s.id=ay.student_id
+    where ay.id=student_school_history.academic_year_id
+    and (select public.education_os_has_family_access(s.family_id)))
+) with check (
+  exists(select 1 from public.academic_years ay join public.students s on s.id=ay.student_id
+    where ay.id=student_school_history.academic_year_id
+    and (select public.education_os_has_family_access(s.family_id)))
+);
+create policy family_delete_student_school_history on student_school_history for delete to authenticated using (
+  exists(select 1 from public.academic_years ay join public.students s on s.id=ay.student_id
+    where ay.id=student_school_history.academic_year_id
+    and (select public.education_os_has_family_access(s.family_id)))
+);
+
+-- Master 表：subject_master / schools / roles / permissions 为公共配置，不放入家庭数据。
+-- app_users 只通过 Auth / family_members 间接访问。
+
+create or replace view v_student_timeline
+with (security_invoker=true)
+as
+select family_id,student_id,lesson_date as event_date,start_time as event_time,
+       '课程'::text as event_type,coalesce(note,'课程安排') as title,
+       id as source_id,'lessons'::text as source_table from public.lessons
+union all
+select family_id,student_id,task_date,pickup_time,'接送',coalesce(direction,'接送任务'),id,'transport_tasks'
+from public.transport_tasks
+union all
+select family_id,student_id,feedback_date,null,'教师反馈',left(content,160),id,'teacher_feedback'
+from public.teacher_feedback
+union all
+select family_id,student_id,assessment_date,null,'成绩',coalesce(assessment_name,assessment_type,'成绩记录'),id,'assessments'
+from public.assessments
+union all
+select family_id,student_id,record_date,null,'学习记录',left(note,160),id,'progress_records'
+from public.progress_records
+union all
+select family_id,student_id,due_date,null,'家庭任务',name,id,'tasks'
+from public.tasks where due_date is not null
+union all
+select family_id,student_id,event_date,start_time,event_type,title,id,'calendar_events'
+from public.calendar_events;
+
+create or replace view v_package_balance
+with (security_invoker=true)
+as
+select p.*,greatest(coalesce(p.total_hours,0)-coalesce(p.used_hours,0),0) as remaining_hours,
+case when greatest(coalesce(p.total_hours,0)-coalesce(p.used_hours,0),0)=0 then '已用完'
+when greatest(coalesce(p.total_hours,0)-coalesce(p.used_hours,0),0)<=4 then '预警' else '正常' end as balance_status
+from public.packages p;
+
+create or replace view v_family_monthly_finance
+with (security_invoker=true)
+as
+select family_id,date_trunc('month',payment_date)::date as month,count(*) as payment_count,
+coalesce(sum(case when status <> '已取消' then amount else 0 end),0) as total_amount,
+coalesce(sum(case when status='已支付' then amount else 0 end),0) as paid_amount,
+coalesce(sum(case when status='待支付' then amount else 0 end),0) as unpaid_amount
+from public.payments group by family_id,date_trunc('month',payment_date);
+
+create or replace view v_family_dashboard
+with (security_invoker=true)
+as
+select f.id as family_id,f.name as family_name,
+(select count(*) from public.students s where s.family_id=f.id and s.status='active') as student_count,
+(select count(*) from public.courses c where c.family_id=f.id and c.status <> '已结束') as active_course_count,
+(select count(*) from public.lessons l where l.family_id=f.id and l.lesson_date=current_date and l.status <> '已取消') as today_lesson_count,
+(select count(*) from public.transport_tasks t where t.family_id=f.id and t.task_date=current_date and t.status <> '已取消') as today_transport_count,
+(select count(*) from public.tasks t where t.family_id=f.id and t.status <> '已完成') as pending_task_count,
+(select count(*) from public.conflicts c where c.family_id=f.id and c.status <> '已处理') as pending_conflict_count,
+(select count(*) from public.teacher_feedback tf where tf.family_id=f.id and tf.status not in ('已同步','已处理')) as pending_feedback_count,
+(select coalesce(sum(p.amount),0) from public.payments p where p.family_id=f.id and p.status <> '已取消'
+ and date_trunc('month',p.payment_date)=date_trunc('month',current_date)) as current_month_spend
+from public.families f;
+
+-- Data API 最小权限：客户端只使用 authenticated + RLS。
+grant usage on schema public to authenticated;
+grant select,insert,update,delete on
+  public.families,public.family_settings,public.students,public.student_contacts,
+  public.academic_years,public.student_subjects,public.teachers,public.courses,
+  public.packages,public.lessons,public.teacher_feedback,public.drivers,public.vehicles,
+  public.transport_tasks,public.temporary_arrangements,public.conflicts,public.tasks,
+  public.academic_goals,public.assessments,public.progress_records,public.payments,
+  public.activities,public.family_members,public.calendar_events,public.school_options,
+  public.dsa_plans,public.dsa_activities,public.reminders,public.notifications,
+  public.audit_logs,public.file_assets,public.sync_checkpoints,public.legacy_data_snapshots
+to authenticated;
+grant select on public.subject_master,public.schools,public.education_pathways,
+  public.grade_master,public.roles,public.permissions,public.role_permissions
+to authenticated;
+grant select on public.v_student_timeline,public.v_package_balance,
+  public.v_family_monthly_finance,public.v_family_dashboard to authenticated;
