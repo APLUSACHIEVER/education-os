@@ -35,7 +35,7 @@ dialog::backdrop{background:#0006}
 label{display:block;margin:8px 0 2px;font-size:13px;color:var(--mut)}
 dialog input,dialog select{width:100%}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c);margin-right:4px}
-.legend{font-size:12px;color:var(--mut);margin-top:6px}.weekday-picker{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:4px}.weekday-picker button{padding:8px 4px;border:1px solid var(--bd);background:var(--card);border-radius:8px;cursor:pointer}.weekday-picker button.on{background:var(--pri);border-color:var(--pri);color:#fff}@media(max-width:520px){.weekday-picker{grid-template-columns:repeat(4,1fr)}}
+.legend{font-size:12px;color:var(--mut);margin-top:6px}.date-picker{margin-top:6px}.date-tools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.date-tools button{font-size:13px}.months{display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:10px}.month{border:1px solid var(--bd);border-radius:10px;padding:8px}.month-title{font-weight:700;margin-bottom:6px}.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.cal b{font-size:11px;color:var(--mut);text-align:center;padding:3px}.cal button{padding:6px 2px;font-size:12px}.cal button.on{background:var(--pri);border-color:var(--pri);color:#fff}.cal button.att{box-shadow:inset 0 -3px 0 #2f9e44}.cal button.cancel{opacity:.45;text-decoration:line-through}.summary-box{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}.summary-box>div{background:var(--bg);border-radius:9px;padding:8px;text-align:center}.summary-box strong{display:block;font-size:20px}.progress{height:8px;background:var(--bd);border-radius:8px;overflow:hidden;margin-top:8px}.progress i{display:block;height:100%;background:var(--pri)}@media(max-width:700px){.months{grid-template-columns:1fr}}@media(max-width:520px){.summary-box{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
 <body>
@@ -64,7 +64,7 @@ dialog input,dialog select{width:100%}
 <script>
 const DAYS=['周一','周二','周三','周四','周五','周六','周日'];
 const COLORS=['#3b6cf6','#e8590c','#2f9e44','#ae3ec9','#0c8599','#d6336c'];
-let db={students:[],items:[]};   // items: {id,stu,type,name,days,s,e,fee,note}
+let db={students:[],items:[]};   // items: {id,stu,type,name,dates,s,e,fee,note,statusByDate:{date:'attended'|'leave'|'cancelled'}}
 let sel='all';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -75,6 +75,19 @@ function load(){try{const t=localStorage.getItem('edu-butler');if(t){const d=JSO
 function save(){try{localStorage.setItem('edu-butler',JSON.stringify(db))}catch(e){}}
 const stu=id=>db.students.find(s=>s.id===id);
 function getDays(i){return Array.isArray(i.days)&&i.days.length?i.days:[Number.isInteger(i.day)?i.day:0]}
+function pad(n){return String(n).padStart(2,'0')}
+function iso(y,m,d){return y+'-'+pad(m)+'-'+pad(d)}
+function parseDate(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function fmtDate(s){const [y,m,d]=s.split('-').map(Number);return y+'年'+m+'月'+d+'日'}
+function itemDates(i){
+  if(Array.isArray(i.dates)&&i.dates.length)return i.dates.slice().sort();
+  const now=new Date(),out=[],days=getDays(i);
+  for(let k=0;k<21;k++){const x=new Date(now);x.setDate(now.getDate()+k);const mon=(x.getDay()+6)%7;if(days.includes(mon))out.push(iso(x.getFullYear(),x.getMonth()+1,x.getDate()))}
+  return out;
+}
+function statusOf(i,d){return i.statusByDate&&i.statusByDate[d]||'scheduled'}
+function sessionStats(i){const ds=itemDates(i),cancel=ds.filter(d=>statusOf(i,d)==='cancelled').length,att=ds.filter(d=>statusOf(i,d)==='attended').length,active=ds.length-cancel;return {total:active,attended:att,remaining:Math.max(0,active-att)}}
+function dateColorClass(i,d){const st=statusOf(i,d);return st==='attended'?'att':st==='cancelled'?'cancel':''}
 function overlap(a,b){return a.s<b.e&&b.s<a.e}
 
 function conflicts(){
@@ -93,33 +106,23 @@ function conflicts(){
 }
 
 function render(){
-  // filter chips
   $('filter').innerHTML=`<button class="chip ${sel==='all'?'on':''}" data-s="all">全部</button>`+
     db.students.map(s=>`<button class="chip ${sel===s.id?'on':''}" data-s="${s.id}"><span class="dot" style="--c:${s.color}"></span>${esc(s.name)}</button>`).join('');
   const c=conflicts();
-  // conflicts (always checks all students)
   $('conf').innerHTML=c.msgs.length?c.msgs.map(m=>`<div class="alert ${m.bad?'bad':'warn'}">${esc(m.t)}</div>`).join(''):'<div class="ok">✅ 暂无冲突</div>';
-  // week
   const vis=db.items.filter(i=>sel==='all'||i.stu===sel);
-  $('week').innerHTML=DAYS.map((n,d)=>{
-    const L=vis.filter(i=>getDays(i).includes(d)).sort((a,b)=>a.s.localeCompare(b.s));
-    return `<div class="day"><h3>${n}</h3>`+(L.map(i=>{
-      const s=stu(i.stu)||{name:'?',color:'#888'};
-      const cls=c.bad.has(i.id)?'bad':c.warn.has(i.id)?'warn':'';
-      return `<div class="item ${cls}" style="--c:${s.color}" data-id="${i.id}"><b>${i.s}-${i.e} ${esc(i.name)}</b><small>${esc(s.name)} · ${i.type}${i.fee?' · '+money(i.fee):''}${i.note?'<br>'+esc(i.note):''}</small></div>`;
-    }).join('')||'<div class="ok" style="text-align:center">—</div>')+'</div>';
-  }).join('');
-  // fees
-  let h='<table><tr><th>学生</th><th class="n">补习</th><th class="n">活动</th><th class="n">合计</th></tr>',T=[0,0];
-  db.students.filter(s=>sel==='all'||s.id===sel).forEach(s=>{
-    const a=sum(s.id,'补习'),b=sum(s.id,'活动');T[0]+=a;T[1]+=b;
-    h+=`<tr><td><span class="dot" style="--c:${s.color}"></span>${esc(s.name)}</td><td class="n">${money(a)}</td><td class="n">${money(b)}</td><td class="n">${money(a+b)}</td></tr>`;
-  });
-  h+=`<tr class="tot"><td>总计</td><td class="n">${money(T[0])}</td><td class="n">${money(T[1])}</td><td class="n">${money(T[0]+T[1])}</td></tr></table>`;
-  const paid=new Map();
-  vis.filter(i=>i.fee>0).forEach(i=>{const k=i.stu+'|'+i.type+'|'+i.name;const o=paid.get(k)||{i,fee:0};o.fee=Math.max(o.fee,i.fee);paid.set(k,o)});
-  if(paid.size){h+='<div class="legend">明细（同一科目一周多节只计一次课费包）：</div><table>'+[...paid.values()].sort((a,b)=>b.fee-a.fee).map(o=>`<tr><td>${esc((stu(o.i.stu)||{}).name)}</td><td>${o.i.type}：${esc(o.i.name)}</td><td class="n">${money(o.fee)}</td></tr>`).join('')+'</table>'}
-  $('fees').innerHTML=h;
+  const byDay=DAYS.map((n,d)=>`<div class="day"><h3>${n}</h3>${vis.filter(i=>getDays(i).includes(d)).sort((a,b)=>a.s.localeCompare(b.s)).map(i=>{
+    const s=stu(i.stu)||{name:'?',color:'#888'},st=sessionStats(i),cls=c.bad.has(i.id)?'bad':c.warn.has(i.id)?'warn':'';
+    return `<div class="item ${cls}" style="--c:${s.color}" data-id="${i.id}"><b>${i.s}-${i.e} ${esc(i.name)}</b><small>${esc(s.name)} · ${i.type} · 已上 ${st.attended} / ${st.total} 节${i.fee?' · '+money(i.fee):''}${i.note?'<br>'+esc(i.note):''}</small></div>`;
+  }).join('')||'<div class="ok" style="text-align:center">—</div>'}</div>`).join('');
+  $('week').innerHTML=byDay;
+  let h='<table><tr><th>学生</th><th>课程</th><th>进度</th><th class="n">课费包</th></tr>';
+  const groups=new Map();
+  vis.filter(i=>i.type==='补习'||i.fee>0).forEach(i=>{const k=i.stu+'|'+i.type+'|'+i.name;const o=groups.get(k)||{i,fee:0};o.fee=Math.max(o.fee,i.fee||0);groups.set(k,o)});
+  let total=0;
+  [...groups.values()].sort((a,b)=>a.i.name.localeCompare(b.i.name)).forEach(o=>{const st=sessionStats(o.i);total+=o.fee;h+=`<tr><td>${esc((stu(o.i.stu)||{}).name)}</td><td>${esc(o.i.name)}</td><td>${st.attended} / ${st.total} 节 <span class="legend">（剩 ${st.remaining}）</span></td><td class="n">${money(o.fee)}</td></tr>`});
+  h+=`<tr class="tot"><td colspan="3">课费包合计</td><td class="n">${money(total)}</td></tr></table>`;
+  $('fees').innerHTML=h||'<div class="ok">暂无课费包</div>';
 }
 // 课费包：同一学生+类型+名称只计算一次，多天上课共用同一个课费包
 function sum(sid,type){
@@ -130,32 +133,54 @@ function sum(sid,type){
 
 function openItem(id){
   if(!db.students.length){alert('请先在「学生」里添加学生');return}
-  const it=db.items.find(i=>i.id===id)||{stu:sel!=='all'?sel:db.students[0].id,type:'补习',name:'',days:[0],s:'16:00',e:'17:00',fee:'',note:''};
-  const selectedDays=getDays(it);
-  $('dlgBody').innerHTML=`<h2>${id?'编辑':'添加'}安排</h2>
+  const it=db.items.find(i=>i.id===id)||{stu:sel!=='all'?sel:db.students[0].id,type:'补习',name:'',dates:[],s:'16:00',e:'17:00',fee:'',note:'',statusByDate:{}};
+  it.statusByDate=it.statusByDate||{};
+  let selected=new Set(Array.isArray(it.dates)?it.dates:[]);
+  let base=selected.size?[...selected].sort()[0]:iso(new Date().getFullYear(),new Date().getMonth()+1,1);
+  let end=selected.size?[...selected].sort().slice(-1)[0]:iso(new Date().getFullYear(),new Date().getMonth()+3,1);
+  const monthList=()=>{const a=parseDate(base),b=parseDate(end),out=[];let y=a.getFullYear(),m=a.getMonth();const by=b.getFullYear()*12+b.getMonth();while(y*12+m<=by&&out.length<12){out.push([y,m]);m++;if(m===12){m=0;y++}}return out};
+  const drawDates=()=>{
+    const months=monthList();
+    $('dateArea').innerHTML=months.map(([y,m])=>{
+      const first=new Date(y,m,1),last=new Date(y,m+1,0),lead=(first.getDay()+6)%7;
+      let cells='';for(let i=0;i<lead;i++)cells+='<span></span>';
+      for(let d=1;d<=last.getDate();d++){const ds=iso(y,m+1,d),on=selected.has(ds),st=it.statusByDate[ds]||'scheduled';cells+=`<button type="button" data-date="${ds}" class="${on?'on ':''}${st==='attended'?'att ':''}${st==='cancelled'?'cancel':''}">${d}</button>`}
+      return `<div class="month"><div class="month-title">${y}年${m+1}月</div><div class="cal"><b>一</b><b>二</b><b>三</b><b>四</b><b>五</b><b>六</b><b>日</b>${cells}</div></div>`
+    }).join('');
+    $('dateArea').querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>{const d=b.dataset.date;if(selected.has(d)){selected.delete(d)}else{selected.add(d);if(!it.statusByDate[d])it.statusByDate[d]='scheduled'}drawDates();updateSummary()});
+  };
+  $('dlgBody').innerHTML=`<h2>${id?'编辑':'添加'}课程</h2>
   <label>学生</label><select id="f_stu">${db.students.map(s=>`<option value="${s.id}" ${s.id===it.stu?'selected':''}>${esc(s.name)}</option>`).join('')}</select>
-  <label>类型</label><select id="f_type">${['补习','活动'].map(t=>`<option ${t===it.type?'selected':''}>${t}</option>`).join('')}</select>
+  <label>类型</label><select id="f_type"><option ${it.type==='补习'?'selected':''}>补习</option><option ${it.type==='活动'?'selected':''}>活动</option></select>
   <label>科目 / 活动名称</label><input id="f_name" value="${esc(it.name)}" placeholder="如：数学、钢琴">
-  <label>星期（可多选）</label><div class="weekday-picker" id="f_day">${DAYS.map((d,i)=>`<button type="button" class="${selectedDays.includes(i)?'on':''}" data-day="${i}">${d}</button>`).join('')}</div><div class="legend">点击星期选择或取消；可以同时选择多个星期。课费包只需填写一次。</div>
-  <label>开始 / 结束时间</label><div class="row"><input type="time" id="f_s" value="${it.s}" style="width:48%"><input type="time" id="f_e" value="${it.e}" style="width:48%"></div>
-  <label>课费包（元，同一科目多天上课只填一次即可，其余留空）</label><input type="number" min="0" id="f_fee" value="${it.fee}">
+  <label>上课时间</label><div class="row"><input type="time" id="f_s" value="${it.s}" style="width:48%"><input type="time" id="f_e" value="${it.e}" style="width:48%"></div>
+  <label>选择实际课程日期</label>
+  <div class="date-tools"><input type="date" id="range_s" value="${base}"><input type="date" id="range_e" value="${end}"><button type="button" id="applyRange">显示日期</button><button type="button" id="clearDates">清除全部</button></div>
+  <div class="legend">直接点击日期即可 Tick / 取消。日期可以完全灵活，不要求固定每周。</div>
+  <div id="dateArea" class="months date-picker"></div>
+  <div class="summary-box"><div><span>计划</span><strong id="sumTotal">0</strong>节</div><div><span>已上</span><strong id="sumAtt">0</strong>节</div><div><span>剩余</span><strong id="sumRemain">0</strong>节</div></div>
+  <div class="progress"><i id="sumBar" style="width:0%"></i></div>
+  <label>课时包总费用${it.type==='补习'?'（必填）':'（如有费用请填写）'}</label><input type="number" min="0" id="f_fee" value="${it.fee}">
   <label>备注（老师/地点）</label><input id="f_note" value="${esc(it.note)}">
-  <div class="row" style="margin-top:14px;justify-content:space-between"><div>${id?'<button id="f_del">删除</button>':''}</div><div class="row"><button id="f_cancel">取消</button><button class="pri" id="f_ok">保存</button></div></div>`;
+  ${id?'<label>已选课程的上课记录</label><div id="statusArea"></div>':''}
+  <div class="row" style="margin-top:14px;justify-content:space-between"><div>${id?'<button id="f_del">删除</button>':''}</div><div class="row"><button id="f_cancel">取消</button><button class="pri" id="f_ok">保存课程</button></div></div>`;
   $('dlg').showModal();
-  $('f_day').querySelectorAll('[data-day]').forEach(b=>b.onclick=()=>b.classList.toggle('on'));
+  const updateSummary=()=>{const temp={...it,dates:[...selected]};const st=sessionStats(temp);$('sumTotal').textContent=st.total;$('sumAtt').textContent=st.attended;$('sumRemain').textContent=st.remaining;$('sumBar').style.width=(st.total?Math.round(st.attended/st.total*100):0)+'%';if($('statusArea')){$('statusArea').innerHTML=[...selected].sort().map(d=>`<div class="row" style="justify-content:space-between;margin:4px 0"><span>${fmtDate(d)}</span><select data-status="${d}"><option value="scheduled" ${statusOf(it,d)==='scheduled'?'selected':''}>未上</option><option value="attended" ${statusOf(it,d)==='attended'?'selected':''}>已上</option><option value="leave" ${statusOf(it,d)==='leave'?'selected':''}>请假</option><option value="cancelled" ${statusOf(it,d)==='cancelled'?'selected':''}>取消</option></select></div>`).join('');$('statusArea').querySelectorAll('[data-status]').forEach(s=>s.onchange=()=>{it.statusByDate[s.dataset.status]=s.value;drawDates();updateSummary()})}};
+  $('applyRange').onclick=()=>{base=$('range_s').value;end=$('range_e').value;if(!base||!end||base>end)return alert('日期范围不正确');drawDates()};
+  $('clearDates').onclick=()=>{selected.clear();drawDates();updateSummary()};
+  drawDates();updateSummary();
   $('f_cancel').onclick=()=>$('dlg').close();
-  if(id)$('f_del').onclick=()=>{if(confirm('确定删除？')){db.items=db.items.filter(i=>i.id!==id);save();render();$('dlg').close()}};
+  if(id)$('f_del').onclick=()=>{if(confirm('确定删除整门课程？')){db.items=db.items.filter(i=>i.id!==id);save();render();$('dlg').close()}};
   $('f_ok').onclick=()=>{
-    const selected=[...$('f_day').querySelectorAll('.on')].map(b=>+b.dataset.day);
-    const o={id:id||uid(),stu:$('f_stu').value,type:$('f_type').value,name:$('f_name').value.trim(),days:selected,s:$('f_s').value,e:$('f_e').value,fee:Math.max(0,+$('f_fee').value||0),note:$('f_note').value.trim()};
-    if(!o.name)return alert('请填写名称');
-    if(!o.days.length)return alert('请至少选择一个星期');
+    const dates=[...selected].sort(),fee=Math.max(0,+$('f_fee').value||0);
+    if(!$('f_name').value.trim())return alert('请填写课程名称');
+    if(!dates.length)return alert('请至少选择一个课程日期');
+    if(!it.type||it.type==='补习'&&fee<=0)return alert('补习课程必须填写课时包费用');
+    const o={id:id||uid(),stu:$('f_stu').value,type:$('f_type').value,name:$('f_name').value.trim(),dates,s:$('f_s').value,e:$('f_e').value,fee,note:$('f_note').value.trim(),statusByDate:it.statusByDate||{}};
     if(!o.s||!o.e||o.e<=o.s)return alert('结束时间必须晚于开始时间');
-    db.items=id?db.items.map(i=>i.id===id?o:i):[...db.items,o];
-    save();render();$('dlg').close();
+    db.items=id?db.items.map(i=>i.id===id?o:i):[...db.items,o];save();render();$('dlg').close();
   };
 }
-
 function openStu(){
   const draw=()=>{
     $('dlgBody').innerHTML=`<h2>学生管理</h2>`+(db.students.map(s=>`<div class="row" style="justify-content:space-between;margin:6px 0"><span><span class="dot" style="--c:${s.color}"></span>${esc(s.name)}</span><span class="row"><button data-ren="${s.id}">改名</button><button data-del="${s.id}">删除</button></span></div>`).join('')||'<div class="ok">还没有学生</div>')+
