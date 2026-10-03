@@ -105,6 +105,15 @@
     return rest(table+'?id=eq.'+encodeURIComponent(id),{method:'DELETE'});
   }
 
+  function deviceKey(){
+    let x=localStorage.getItem(DEVICE);
+    if(!x){
+      x=(crypto.randomUUID?crypto.randomUUID():('device_'+Date.now()+'_'+Math.random().toString(36).slice(2)));
+      localStorage.setItem(DEVICE,x);
+    }
+    return x;
+  }
+
   async function backupLocalSnapshot(){
     if(!enabled()) return false;
     const c=cfg();
