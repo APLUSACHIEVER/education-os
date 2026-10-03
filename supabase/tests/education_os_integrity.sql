@@ -30,3 +30,33 @@ from information_schema.views
 where table_schema='public'
   and table_name in ('v_student_timeline','v_package_balance','v_family_monthly_finance','v_family_dashboard')
 order by table_name;
+
+
+-- Auth → 家庭绑定函数与执行权限
+select routine_name
+from information_schema.routines
+where routine_schema='public'
+  and routine_name in (
+    'education_os_current_app_user_id',
+    'education_os_current_family_ids',
+    'education_os_auth_context',
+    'education_os_create_family'
+  )
+order by routine_name;
+
+select routine_name, grantee, privilege_type
+from information_schema.routine_privileges
+where specific_schema='public'
+  and routine_name in (
+    'education_os_current_app_user_id',
+    'education_os_current_family_ids',
+    'education_os_auth_context',
+    'education_os_create_family'
+  )
+  and grantee='authenticated'
+order by routine_name, privilege_type;
+
+-- 家庭账号绑定完整性
+select
+  (select count(*) from public.app_users where auth_user_id is not null) as bound_app_users,
+  (select count(*) from public.family_members where status='active') as active_family_members;
