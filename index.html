@@ -382,7 +382,7 @@
  function open(){refresh();modal.style.display='block';document.body.style.overflow='hidden'}
  function hide(){modal.style.display='none';document.body.style.overflow=''}
  stage.addEventListener('change',refresh);grade.addEventListener('change',refresh);btn.addEventListener('click',open);close.addEventListener('click',hide);cancel.addEventListener('click',hide);modal.addEventListener('click',e=>{if(e.target===modal)hide()});
- form.addEventListener('submit',e=>{e.preventDefault();const d=Object.fromEntries(new FormData(form).entries());d.subjects=[...form.querySelectorAll('input[name="subjectChoice"]:checked')].map(x=>x.value).join(' · ');delete d.subjectChoice;d.id='student_'+Date.now();d.createdAt=new Date().toISOString();const list=read();list.push(d);localStorage.setItem('educationOS_students',JSON.stringify(list));render();hide();form.reset();refresh();alert('学生档案已建立，并已显示在学生档案中。')});
+ /* 学生保存统一由下方的保存处理器负责，避免重复建立学生。 */
  refresh();render();
  window.renderEducationStudents=render;
  function getStudentById(id){
