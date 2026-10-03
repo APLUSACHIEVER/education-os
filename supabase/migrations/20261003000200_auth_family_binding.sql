@@ -43,3 +43,34 @@ grant execute on function public.education_os_current_family_ids() to authentica
 -- 登录后通过 Auth 用户身份查找 app_users，再得到 family_members.family_id。
 -- 新用户的首次建家庭/绑定流程建议由受保护的后端 Edge Function 完成，
 -- 不在浏览器放置 secret/service_role key。
+
+create or replace function public.education_os_auth_context()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select jsonb_build_object(
+    'app_user_id', au.id,
+    'auth_user_id', au.auth_user_id,
+    'display_name', au.display_name,
+    'email', au.email,
+    'families', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'family_id',fm.family_id,
+        'role_code',fm.role_code,
+        'relationship',fm.relationship,
+        'is_primary',fm.is_primary
+      ) order by fm.is_primary desc, fm.created_at)
+      from family_members fm
+      where fm.user_id=au.id and fm.status='active'
+    ),'[]'::jsonb)
+  )
+  from app_users au
+  where au.auth_user_id=auth.uid() and au.status='active'
+  limit 1
+$$;
+
+revoke all on function public.education_os_auth_context() from public;
+grant execute on function public.education_os_auth_context() to authenticated;
