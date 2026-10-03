@@ -73,7 +73,8 @@ const money=n=>'¥'+(Math.round(n*100)/100).toLocaleString();
 function load(){try{const t=localStorage.getItem('edu-butler');if(t){const d=JSON.parse(t);if(d&&Array.isArray(d.students)&&Array.isArray(d.items))db=d}}catch(e){}}
 function save(){try{localStorage.setItem('edu-butler',JSON.stringify(db))}catch(e){}}
 const stu=id=>db.students.find(s=>s.id===id);
-function getDays(i){return Array.isArray(i.days)&&i.days.length?i.days:[Number.isInteger(i.day)?i.day:0]}\nfunction overlap(a,b){return a.s<b.e&&b.s<a.e}
+function getDays(i){return Array.isArray(i.days)&&i.days.length?i.days:[Number.isInteger(i.day)?i.day:0]}
+function overlap(a,b){return a.s<b.e&&b.s<a.e}
 
 function conflicts(){
   const bad=new Set(),warn=new Set(),msgs=[];
@@ -128,7 +129,8 @@ function sum(sid,type){
 
 function openItem(id){
   if(!db.students.length){alert('请先在「学生」里添加学生');return}
-  const it=db.items.find(i=>i.id===id)||{stu:sel!=='all'?sel:db.students[0].id,type:'补习',name:'',days:[0],s:'16:00',e:'17:00',fee:'',note:''};\n  const selectedDays=getDays(it);
+  const it=db.items.find(i=>i.id===id)||{stu:sel!=='all'?sel:db.students[0].id,type:'补习',name:'',days:[0],s:'16:00',e:'17:00',fee:'',note:''};
+  const selectedDays=getDays(it);
   $('dlgBody').innerHTML=`<h2>${id?'编辑':'添加'}安排</h2>
   <label>学生</label><select id="f_stu">${db.students.map(s=>`<option value="${s.id}" ${s.id===it.stu?'selected':''}>${esc(s.name)}</option>`).join('')}</select>
   <label>类型</label><select id="f_type">${['补习','活动'].map(t=>`<option ${t===it.type?'selected':''}>${t}</option>`).join('')}</select>
@@ -143,8 +145,10 @@ function openItem(id){
   $('f_cancel').onclick=()=>$('dlg').close();
   if(id)$('f_del').onclick=()=>{if(confirm('确定删除？')){db.items=db.items.filter(i=>i.id!==id);save();render();$('dlg').close()}};
   $('f_ok').onclick=()=>{
-    const selected=[...$('f_day').querySelectorAll('.on')].map(b=>+b.dataset.day);\n    const o={id:id||uid(),stu:$('f_stu').value,type:$('f_type').value,name:$('f_name').value.trim(),days:selected,s:$('f_s').value,e:$('f_e').value,fee:Math.max(0,+$('f_fee').value||0),note:$('f_note').value.trim()};
-    if(!o.name)return alert('请填写名称');\n    if(!o.days.length)return alert('请至少选择一个星期');
+    const selected=[...$('f_day').querySelectorAll('.on')].map(b=>+b.dataset.day);
+    const o={id:id||uid(),stu:$('f_stu').value,type:$('f_type').value,name:$('f_name').value.trim(),days:selected,s:$('f_s').value,e:$('f_e').value,fee:Math.max(0,+$('f_fee').value||0),note:$('f_note').value.trim()};
+    if(!o.name)return alert('请填写名称');
+    if(!o.days.length)return alert('请至少选择一个星期');
     if(!o.s||!o.e||o.e<=o.s)return alert('结束时间必须晚于开始时间');
     db.items=id?db.items.map(i=>i.id===id?o:i):[...db.items,o];
     save();render();$('dlg').close();
