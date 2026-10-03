@@ -373,7 +373,7 @@
      '<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)"><span class="label">当前学校</span><b>'+esc(s.school||'未填写')+'</b></div>'+
      '<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)"><span class="label">学习路径</span><b>'+esc(s.path||'尚未设置')+'</b></div>'+
      '<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)"><span class="label">主要科目</span><b>'+esc(s.subjects||'尚未设置')+'</b></div>'+
-     '<div style="display:flex;justify-content:space-between;padding:12px 0"><span class="label">当前目标</span><span>'+esc(s.goal||'尚未设置')+'</span></div><div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span class="label">学生完整档案</span><span class="pill">点击查看 →</span></div></div>';
+     '<div style="display:flex;justify-content:space-between;padding:12px 0"><span class="label">当前目标</span><span>'+esc(s.goal||'尚未设置')+'</span></div><div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span class="label">学生完整档案</span><button type="button" class="pill student-open-btn" data-open-student="'+esc(s.id||'')+'">点击查看 →</button></div></div>';
    }).join('');
    cards.innerHTML=html||'<div class="card label">目前还没有学生资料，请点击「＋ 新增学生」建立第一个学生档案。</div>';
    const childCards=document.getElementById('studentCardsChild');
