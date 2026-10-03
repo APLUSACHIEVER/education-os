@@ -18,7 +18,7 @@
 
   function headers(){
     const c=cfg();
-    return {'apikey':c.publishableKey,'Authorization':'Bearer '+(c.accessToken||c.anonKey),'Content-Type':'application/json','Prefer':'return=representation'};
+    return {'apikey':c.publishableKey,'Authorization':'Bearer '+(c.accessToken||c.publishableKey),'Content-Type':'application/json','Prefer':'return=representation'};
   }
   async function rest(path,options={}){
     const c=cfg();
@@ -105,13 +105,29 @@
     return rest(table+'?id=eq.'+encodeURIComponent(id),{method:'DELETE'});
   }
 
+  async function backupLocalSnapshot(){
+    if(!enabled()) return false;
+    const c=cfg();
+    const data={
+      students:safe(()=>JSON.parse(localStorage.getItem(STU)||'[]'),[]),
+      relations:safe(()=>JSON.parse(localStorage.getItem(REL)||'{}'),{}),
+      capturedAt:new Date().toISOString()
+    };
+    try{
+      await rest('legacy_data_snapshots',{method:'POST',body:JSON.stringify({
+        family_id:c.familyId,device_key:deviceKey(),snapshot_version:Date.now(),data
+      })});
+      return true;
+    }catch(e){console.warn('本地快照上传失败',e);return false;}
+  }
+
   function setConfig(next){
     const c={...cfg(),...next};
     localStorage.setItem(KEY,JSON.stringify(c));
     return {enabled:!!c.enabled,url:c.url||'',familyId:c.familyId||''};
   }
 
-  function status(){const c=cfg();return {enabled:enabled(),configured:!!(c.url&&c.anonKey&&c.familyId),familyId:c.familyId||'',lastSync:c.lastSync||null};}
+  function status(){const c=cfg();return {enabled:enabled(),configured:!!(c.url&&c.publishableKey&&c.familyId),familyId:c.familyId||'',lastSync:c.lastSync||null};}
 
   window.EducationOSData={
     version:'1.0.0',
