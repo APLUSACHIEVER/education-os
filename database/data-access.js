@@ -38,11 +38,43 @@
         next[table]=rows||[];
       }catch(e){console.warn('同步失败:',table,e);}
     }
+    await pullAcademic(next);
     writeCache(next);
     if(next.students) localStorage.setItem(STU,JSON.stringify(next.students.map(mapStudentRemoteToLocal)));
     if(next.courses||next.lessons||next.tasks||next.payments) localStorage.setItem(REL,JSON.stringify(buildRelations(next)));
     window.dispatchEvent(new Event('educationOS:changed'));
     return true;
+  }
+
+  async function pullAcademic(next){
+    const c=cfg();
+    if(!Array.isArray(next.students)||!next.students.length)return;
+    const ids=next.students.map(x=>x.id).filter(Boolean);
+    try{
+      const years=await rest('academic_years?student_id=in.('+ids.map(encodeURIComponent).join(',')+')&select=*');
+      next.academic_years=years||[];
+    }catch(e){console.warn('同步失败: academic_years',e);next.academic_years=[];}
+    try{
+      const yearIds=(next.academic_years||[]).map(x=>x.id).filter(Boolean);
+      next.student_subjects=yearIds.length?await rest('student_subjects?academic_year_id=in.('+yearIds.map(encodeURIComponent).join(',')+')&select=*'):[];
+    }catch(e){console.warn('同步失败: student_subjects',e);next.student_subjects=[];}
+    try{
+      const schoolYears=(next.academic_years||[]).map(x=>x.id).filter(Boolean);
+      next.student_school_history=schoolYears.length?await rest('student_school_history?academic_year_id=in.('+schoolYears.map(encodeURIComponent).join(',')+')&select=*'):[];
+    }catch(e){console.warn('同步失败: student_school_history',e);next.student_school_history=[];}
+    const byStudent={};
+    (next.academic_years||[]).forEach(y=>{
+      const key=String(y.student_id);(byStudent[key] ||= []).push({
+        id:y.id,year:y.year_label,grade:y.grade_code,school:y.school_name||'',path:y.pathway||'',stage:y.education_level==='secondary'?'Secondary':y.education_level==='jc'?'JC':'Primary',className:y.class_name||'',notes:y.notes||'',updatedAt:y.updated_at,
+        subjectRecords:{}
+      });
+    });
+    (next.student_subjects||[]).forEach(x=>{
+      const ys=(next.academic_years||[]).find(y=>String(y.id)===String(x.academic_year_id));
+      if(!ys)return; const rec=(byStudent[String(ys.student_id)]||[]).find(y=>String(y.id)===String(ys.id));
+      if(rec)rec.subjectRecords[x.subject_name_snapshot||x.subject_id]={teacher:x.teacher_name||'',frequency:x.weekly_frequency||'',mode:x.teaching_mode||'',courseId:x.tuition_course_id||'',subjectId:x.subject_id,updatedAt:x.updated_at};
+    });
+    next.students=next.students.map(s=>({...s,academicYears:byStudent[String(s.id)]||[]}));
   }
 
   function mapStudentRemoteToLocal(s){
@@ -105,6 +137,28 @@
     return rest(table+'?id=eq.'+encodeURIComponent(id),{method:'DELETE'});
   }
 
+
+  async function testConnection(){
+    if(!enabled()) return {ok:false,reason:'未配置数据库'};
+    try{
+      await rest('families?id=eq.'+encodeURIComponent(cfg().familyId)+'&select=id&limit=1');
+      return {ok:true,familyId:cfg().familyId};
+    }catch(e){return {ok:false,reason:e.message||String(e)};}
+  }
+
+  async function upsertStudent(row){
+    const x={...row}; delete x.academicYears;
+    return upsert('students',x);
+  }
+  async function upsertAcademicYear(row){
+    const x={...row};
+    x.year_label=x.year_label||x.year; x.start_date=x.start_date||x.startDate||new Date().getFullYear()+'-01-01'; x.end_date=x.end_date||x.endDate||new Date().getFullYear()+'-12-31';
+    x.education_level=x.education_level||((x.stage||'Primary')==='Secondary'?'secondary':(x.stage||'Primary')==='JC'?'jc':'primary');
+    x.grade_code=x.grade_code||x.grade||'P1'; delete x.year; delete x.startDate; delete x.endDate; delete x.stage; delete x.grade;
+    return upsert('academic_years',x);
+  }
+  async function upsertStudentSubject(row){return upsert('student_subjects',row);}
+
   function deviceKey(){
     let x=localStorage.getItem(DEVICE);
     if(!x){
@@ -141,10 +195,14 @@
   window.EducationOSData={
     version:'1.0.0',
     status,
+    testConnection,
     configure:setConfig,
     snapshot:backupLocalSnapshot,
     sync:async()=>{await backupLocalSnapshot();const ok=await pullCore();const c=cfg();c.lastSync=ok?new Date().toISOString():c.lastSync;localStorage.setItem(KEY,JSON.stringify(c));return ok;},
     upsert,
+    upsertStudent,
+    upsertAcademicYear,
+    upsertStudentSubject,
     remove,
     getCache:cache
   };
