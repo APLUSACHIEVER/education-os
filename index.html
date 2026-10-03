@@ -313,7 +313,7 @@
       btn.addEventListener('click',function(){
         const p=btn.getAttribute('data-page');
         ids.forEach(function(id){const el=document.getElementById(id);if(el)el.style.display='none';});
-        if((p==='客户 / 家庭档案'||p==='学生完整档案')&&window.renderEducationStudents)window.renderEducationStudents(); if(p==='客户 / 家庭档案'&&window.renderFamilyStudentSummary)window.renderFamilyStudentSummary(); if(p==='家庭日程')renderFamilyScheduleFromLessons(); if(p==='学校 / DSA规划')renderPlanning();
+        if((p==='客户 / 家庭档案'||p==='学生完整档案')&&window.renderEducationStudents)window.renderEducationStudents(); if(p==='客户 / 家庭档案'&&window.renderFamilyStudentSummary){window.renderFamilyStudentSummary();setTimeout(window.renderFamilyStudentSummary,0);} if(p==='家庭日程')renderFamilyScheduleFromLessons(); if(p==='学校 / DSA规划')renderPlanning();
         const target=document.getElementById(map[p]||'placeholder');
         if(target)target.style.display='block';
         if(p==='学业管理'){const m=document.getElementById('moeSubjectExplorer');if(m)m.style.display='block';}
@@ -404,7 +404,10 @@
  refresh();render();
  window.renderEducationStudents=render;
  function renderFamilyStudentSummary(){
-   const box=document.getElementById('studentCards'); if(!box)return;
+   const family=document.getElementById('familyPage'); if(!family)return;
+   let box=document.getElementById('familyStudentDirectory');
+   if(!box){box=document.createElement('div');box.id='familyStudentDirectory';const heads=family.querySelectorAll('.section-head');const target=Array.from(heads).find(h=>h.textContent.indexOf('学生档案')>=0);const section=target?target.closest('.section'):null;if(section)section.appendChild(box);else family.appendChild(box);}
+   let legacy=document.getElementById('studentCards'); if(legacy&&legacy!==box)legacy.style.display='none';
    let list=[];try{list=JSON.parse(localStorage.getItem('educationOS_students')||'[]')}catch(e){list=[]}
    const esc2=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
    if(!list.length){box.innerHTML='<div class="card label">目前还没有学生资料，请点击「＋ 新增学生」建立第一个学生档案。</div>';return;}
