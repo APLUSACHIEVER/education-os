@@ -483,19 +483,7 @@
    '<section class="section"><div class="section-head"><h2>八、学年备注</h2></div><div class="card"><span class="label">当前学年暂未建立额外备注。</span></div></section>';
    detail.querySelectorAll('.year-profile-btn').forEach(b=>b.onclick=()=>showStudentYearProfile(id,b.dataset.year));
    const editYearBtn=document.getElementById('editStudentYearBtn');
-   if(editYearBtn) editYearBtn.onclick=()=>{
-     const key='educationOS_students', list=JSON.parse(localStorage.getItem(key)||'[]'), idx=list.findIndex(x=>String(x.id)===String(id));
-     if(idx<0)return alert('未找到学生档案');
-     const s0=list[idx], years=Array.isArray(s0.academicYears)?s0.academicYears:[], rec=years.find(r=>String(r.year)===String(y))||{year:y};
-     const school=prompt('学校（手动填写）',rec.school||'')??(rec.school||'');
-     const grade=prompt('年级',rec.grade||d.grade||'')??(rec.grade||d.grade||'');
-     const path=prompt('学习路径',rec.path||d.path||'')??(rec.path||d.path||'');
-     const subjects=prompt('本学年科目（用 · 分隔）',rec.subjects||d.subjects||'')??(rec.subjects||d.subjects||'');
-     const goal=prompt('学业目标',rec.goal||d.goal||'')??(rec.goal||d.goal||'');
-     const next={...rec,id:rec.id||('academic_'+id+'_'+y),year:y,school,grade,path,subjects,goal,updatedAt:new Date().toISOString()};
-     const pos=years.findIndex(r=>String(r.year)===String(y)); if(pos>=0)years[pos]=next; else years.push(next);
-     s0.academicYears=years; list[idx]=s0; localStorage.setItem(key,JSON.stringify(list)); alert('学年档案已更新'); showStudentYearProfile(id,y);
-   };
+   if(editYearBtn) editYearBtn.onclick=()=>openStudentYearEditor(id,y,d);
    detail.querySelectorAll('.year-subject-btn').forEach(b=>b.onclick=()=>{if(window.showSubjectProfileFromYear)window.showSubjectProfileFromYear(id,y,b.dataset.subject);});
    document.getElementById('backStudentOverview').onclick=()=>showStudentProfile(id);
  }
@@ -2004,4 +1992,89 @@ document.addEventListener('click',function(e){
 </script>
 <script src="database/data-access.js"></script>
 <script src="database/auth.js"></script>
+<style id="os-family-student-structure-style">
+.os-structure-modal{position:fixed;inset:0;background:rgba(0,0,0,.42);display:none;align-items:center;justify-content:center;padding:18px;z-index:100000}
+.os-structure-modal.show{display:flex}.os-structure-dialog{width:min(760px,100%);max-height:90vh;overflow:auto;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px;box-shadow:0 24px 70px rgba(0,0,0,.22)}
+.os-structure-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px}.os-structure-head h2{margin:0;font-size:20px}.os-structure-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.os-structure-field{display:flex;flex-direction:column;gap:7px}.os-structure-field.full{grid-column:1/-1}.os-structure-field label{font-size:13px;color:var(--muted)}.os-structure-field input,.os-structure-field select,.os-structure-field textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);font:inherit}.os-structure-field textarea{min-height:92px;resize:vertical}.os-structure-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;padding-top:15px;border-top:1px solid var(--border)}.os-structure-btn{padding:9px 15px;border-radius:10px}.os-structure-btn.cancel{background:var(--surface2);border:1px solid var(--border)}.os-structure-btn.save{background:var(--green);color:#fff}
+.os-structure-breadcrumb{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-7px 0 18px;color:var(--muted);font-size:12px}.os-structure-breadcrumb b{color:var(--text)}
+@media(max-width:650px){.os-structure-grid{grid-template-columns:1fr}.os-structure-field.full{grid-column:auto}}
+</style>
+<div id="osStudentYearEditor" class="os-structure-modal" aria-hidden="true">
+  <div class="os-structure-dialog" role="dialog" aria-modal="true" aria-labelledby="osStudentYearEditorTitle">
+    <div class="os-structure-head"><div><h2 id="osStudentYearEditorTitle">编辑本学年档案</h2><div id="osStudentYearEditorSub" class="label" style="margin-top:5px">学生 → 学年</div></div><button type="button" class="family-edit-close" id="osStudentYearEditorClose">×</button></div>
+    <form id="osStudentYearEditorForm">
+      <div class="os-structure-grid">
+        <div class="os-structure-field"><label>学年</label><input id="osYearEditYear" type="text" readonly></div>
+        <div class="os-structure-field"><label>年级</label><input id="osYearEditGrade" type="text" required></div>
+        <div class="os-structure-field"><label>学校</label><input id="osYearEditSchool" type="text"></div>
+        <div class="os-structure-field"><label>学习路径</label><select id="osYearEditPath"><option value="">请选择</option><option>小学普通课程</option><option>IP</option><option>Mainstream PG 3</option><option>Mainstream PG 2</option><option>Mainstream PG 1</option><option>JC</option></select></div>
+        <div class="os-structure-field full"><label>本学年科目</label><input id="osYearEditSubjects" type="text" placeholder="例如：英语 · 数学 · 科学"></div>
+        <div class="os-structure-field full"><label>学业目标</label><textarea id="osYearEditGoal" placeholder="记录这一学年的主要学业目标"></textarea></div>
+      </div>
+      <div class="os-structure-actions"><button type="button" class="os-structure-btn cancel" id="osStudentYearEditorCancel">取消</button><button type="submit" class="os-structure-btn save">保存学年档案</button></div>
+    </form>
+  </div>
+</div>
+<script id="os-family-student-structure-v2">
+(function(){
+'use strict';
+const KEY='educationOS_students';
+const readStudents=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return[]}};
+const saveStudents=list=>{localStorage.setItem(KEY,JSON.stringify(list));window.dispatchEvent(new Event('educationOS:changed'));};
+const byId=id=>readStudents().find(s=>String(s.id)===String(id))||null;
+function family(){document.querySelector('.nav button[data-page="客户 / 家庭档案"]')?.click();}
+function studentDirectory(){document.querySelector('.nav button[data-page="学生完整档案"]')?.click();}
+function closeYearEditor(){const m=document.getElementById('osStudentYearEditor');if(m){m.classList.remove('show');m.setAttribute('aria-hidden','true');}}
+window.educationOSOpenFamily=family;
+window.educationOSOpenStudentDirectory=studentDirectory;
+window.educationOSOpenStudent=window.educationOSOpenStudent||function(id){if(typeof window.showStudentProfile==='function')window.showStudentProfile(id);};
+window.educationOSOpenStudentYear=function(id,year){if(typeof window.showStudentYearProfile==='function')window.showStudentYearProfile(id,year);};
+
+window.openStudentYearEditor=function(id,year,d){
+  const s=byId(id);if(!s)return;
+  const y=String(year), years=Array.isArray(s.academicYears)?s.academicYears:[], rec=years.find(x=>String(x.year)===y)||{};
+  const m=document.getElementById('osStudentYearEditor');if(!m)return;
+  document.getElementById('osYearEditYear').value=y;
+  document.getElementById('osYearEditGrade').value=rec.grade||d?.grade||s.grade||'';
+  document.getElementById('osYearEditSchool').value=rec.school||d?.school||s.school||'';
+  document.getElementById('osYearEditPath').value=rec.path||d?.path||s.path||'';
+  document.getElementById('osYearEditSubjects').value=rec.subjects||d?.subjects||s.subjects||'';
+  document.getElementById('osYearEditGoal').value=rec.goal||d?.goal||s.goal||'';
+  document.getElementById('osStudentYearEditorSub').textContent=(s.name||'学生')+' → '+y+' 学年档案';
+  m.dataset.studentId=String(id);m.dataset.year=y;m.classList.add('show');m.setAttribute('aria-hidden','false');
+  setTimeout(()=>document.getElementById('osYearEditGrade')?.focus(),30);
+};
+function saveYearEditor(e){
+  e.preventDefault();
+  const id=document.getElementById('osStudentYearEditor').dataset.studentId,y=document.getElementById('osStudentYearEditor').dataset.year;
+  const list=readStudents(),idx=list.findIndex(s=>String(s.id)===String(id));if(idx<0)return;
+  const s=list[idx],years=Array.isArray(s.academicYears)?s.academicYears:[],pos=years.findIndex(x=>String(x.year)===String(y)),old=pos>=0?years[pos]:{};
+  const next=Object.assign({},old,{id:old.id||('academic_'+id+'_'+y),year:y,stage:s.stage,school:document.getElementById('osYearEditSchool').value.trim(),grade:document.getElementById('osYearEditGrade').value.trim(),path:document.getElementById('osYearEditPath').value,subjects:document.getElementById('osYearEditSubjects').value.trim(),goal:document.getElementById('osYearEditGoal').value.trim(),updatedAt:new Date().toISOString()});
+  if(pos>=0)years[pos]=next;else years.push(next);
+  s.academicYears=years;s.schoolYear=String(s.schoolYear||y)===y?s.schoolYear:s.schoolYear;s.updatedAt=new Date().toISOString();list[idx]=s;saveStudents(list);closeYearEditor();window.showStudentYearProfile?.(id,y);
+}
+document.getElementById('osStudentYearEditorForm')?.addEventListener('submit',saveYearEditor);
+document.getElementById('osStudentYearEditorClose')?.addEventListener('click',closeYearEditor);
+document.getElementById('osStudentYearEditorCancel')?.addEventListener('click',closeYearEditor);
+document.getElementById('osStudentYearEditor')?.addEventListener('click',e=>{if(e.target.id==='osStudentYearEditor')closeYearEditor();});
+
+function syncStudentLayer(){
+  const list=readStudents();
+  const count=document.getElementById('topStudentCount');if(count)count.textContent=list.filter(s=>s&&s.status!=='已归档').length+' 位学生';
+  const familyCount=document.getElementById('familyStudentCountDisplay');if(familyCount)familyCount.textContent=list.filter(s=>s&&s.status!=='已归档').length+' 位';
+  if(typeof window.renderFamilyStudentSummary==='function')window.renderFamilyStudentSummary();
+  if(typeof window.renderEducationStudents==='function')window.renderEducationStudents();
+}
+window.addEventListener('educationOS:changed',()=>setTimeout(syncStudentLayer,30));
+window.addEventListener('storage',e=>{if(e.key===KEY)setTimeout(syncStudentLayer,30);});
+
+const originalYear=window.showStudentYearProfile;
+if(originalYear){window.showStudentYearProfile=originalYear;}
+
+document.addEventListener('click',e=>{
+  const y=e.target.closest('.year-profile-btn');if(y&&window.showStudentYearProfile){e.preventDefault();e.stopPropagation();const parent=document.getElementById('studentDetailPage');const id=parent?.dataset?.studentId;if(id)window.showStudentYearProfile(id,y.dataset.year);}
+  const back=e.target.closest('#studentBackBtn');if(back){e.preventDefault();e.stopPropagation();family();}
+});
+})();
+</script>
 </body></html>
