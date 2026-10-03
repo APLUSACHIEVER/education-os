@@ -35,7 +35,7 @@ dialog::backdrop{background:#0006}
 label{display:block;margin:8px 0 2px;font-size:13px;color:var(--mut)}
 dialog input,dialog select{width:100%}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c);margin-right:4px}
-.legend{font-size:12px;color:var(--mut);margin-top:6px}
+.legend{font-size:12px;color:var(--mut);margin-top:6px}.weekday-picker{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:4px}.weekday-picker button{padding:8px 4px;border:1px solid var(--bd);background:var(--card);border-radius:8px;cursor:pointer}.weekday-picker button.on{background:var(--pri);border-color:var(--pri);color:#fff}@media(max-width:520px){.weekday-picker{grid-template-columns:repeat(4,1fr)}}
 </style>
 </head>
 <body>
@@ -104,7 +104,7 @@ function render(){
     return `<div class="day"><h3>${n}</h3>`+(L.map(i=>{
       const s=stu(i.stu)||{name:'?',color:'#888'};
       const cls=c.bad.has(i.id)?'bad':c.warn.has(i.id)?'warn':'';
-      return `<div class="item ${cls}" style="--c:${s.color}" data-id="${i.id}"><b>${i.s}-${i.e} ${esc(i.name)}</b><small>${esc(s.name)} · ${i.type}${i.fee?' · '+money(i.fee)+'/月':''}${i.note?'<br>'+esc(i.note):''}</small></div>`;
+      return `<div class="item ${cls}" style="--c:${s.color}" data-id="${i.id}"><b>${i.s}-${i.e} ${esc(i.name)}</b><small>${esc(s.name)} · ${i.type}${i.fee?' · '+money(i.fee):''}${i.note?'<br>'+esc(i.note):''}</small></div>`;
     }).join('')||'<div class="ok" style="text-align:center">—</div>')+'</div>';
   }).join('');
   // fees
@@ -133,16 +133,17 @@ function openItem(id){
   <label>学生</label><select id="f_stu">${db.students.map(s=>`<option value="${s.id}" ${s.id===it.stu?'selected':''}>${esc(s.name)}</option>`).join('')}</select>
   <label>类型</label><select id="f_type">${['补习','活动'].map(t=>`<option ${t===it.type?'selected':''}>${t}</option>`).join('')}</select>
   <label>科目 / 活动名称</label><input id="f_name" value="${esc(it.name)}" placeholder="如：数学、钢琴">
-  <label>星期（可多选）</label><select id="f_day" multiple size="7">${DAYS.map((d,i)=>`<option value="${i}" ${selectedDays.includes(i)?'selected':''}>${d}</option>`).join('')}</select><div class="legend">可同时选择多个星期，例如周一＋周三＋周五；课费包只需填写一次。</div>
+  <label>星期（可多选）</label><div class="weekday-picker" id="f_day">${DAYS.map((d,i)=>\`<button type="button" class="${selectedDays.includes(i)?'on':''}" data-day="${i}">${d}</button>\`).join('')}</div><div class="legend">点击星期选择或取消；可以同时选择多个星期。课费包只需填写一次。</div>
   <label>开始 / 结束时间</label><div class="row"><input type="time" id="f_s" value="${it.s}" style="width:48%"><input type="time" id="f_e" value="${it.e}" style="width:48%"></div>
   <label>课费包（元，同一科目多天上课只填一次即可，其余留空）</label><input type="number" min="0" id="f_fee" value="${it.fee}">
   <label>备注（老师/地点）</label><input id="f_note" value="${esc(it.note)}">
   <div class="row" style="margin-top:14px;justify-content:space-between"><div>${id?'<button id="f_del">删除</button>':''}</div><div class="row"><button id="f_cancel">取消</button><button class="pri" id="f_ok">保存</button></div></div>`;
   $('dlg').showModal();
+  $('f_day').querySelectorAll('[data-day]').forEach(b=>b.onclick=()=>b.classList.toggle('on'));
   $('f_cancel').onclick=()=>$('dlg').close();
   if(id)$('f_del').onclick=()=>{if(confirm('确定删除？')){db.items=db.items.filter(i=>i.id!==id);save();render();$('dlg').close()}};
   $('f_ok').onclick=()=>{
-    const selected=[...$('f_day').selectedOptions].map(o=>+o.value);\n    const o={id:id||uid(),stu:$('f_stu').value,type:$('f_type').value,name:$('f_name').value.trim(),days:selected,s:$('f_s').value,e:$('f_e').value,fee:Math.max(0,+$('f_fee').value||0),note:$('f_note').value.trim()};
+    const selected=[...$('f_day').querySelectorAll('.on')].map(b=>+b.dataset.day);\n    const o={id:id||uid(),stu:$('f_stu').value,type:$('f_type').value,name:$('f_name').value.trim(),days:selected,s:$('f_s').value,e:$('f_e').value,fee:Math.max(0,+$('f_fee').value||0),note:$('f_note').value.trim()};
     if(!o.name)return alert('请填写名称');\n    if(!o.days.length)return alert('请至少选择一个星期');
     if(!o.s||!o.e||o.e<=o.s)return alert('结束时间必须晚于开始时间');
     db.items=id?db.items.map(i=>i.id===id?o:i):[...db.items,o];
