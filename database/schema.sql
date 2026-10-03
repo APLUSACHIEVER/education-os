@@ -890,3 +890,22 @@ end $$;
 -- student_school_history / subject_master 等通过学生或 Master 关系访问。
 -- subject_master 为公共 Master，不按家庭隔离。
 -- schools 为公共学校 Master，可逐步补充官方学校资料。
+
+
+-- 14. 渐进式迁移桥接：保留现有 localStorage 数据快照，避免一次性切换造成数据损失
+create table if not exists legacy_data_snapshots (
+  id uuid primary key default gen_random_uuid(),
+  family_id uuid not null references families(id) on delete cascade,
+  device_key text not null,
+  snapshot_version bigint not null default 1,
+  data jsonb not null,
+  captured_at timestamptz not null default now(),
+  unique(family_id,device_key,snapshot_version)
+);
+
+create index if not exists idx_legacy_snapshot_family on legacy_data_snapshots(family_id,captured_at desc);
+alter table legacy_data_snapshots enable row level security;
+drop policy if exists family_access_legacy_data_snapshots on legacy_data_snapshots;
+create policy family_access_legacy_data_snapshots on legacy_data_snapshots
+for all using (education_os_has_family_access(family_id))
+with check (education_os_has_family_access(family_id));
