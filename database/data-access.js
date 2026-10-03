@@ -5,6 +5,7 @@
 (function(){
   'use strict';
   const KEY='educationOS_db_config';
+  const DEVICE='educationOS_device_key';
   const REL='educationOS_relations';
   const STU='educationOS_students';
   const CACHE='educationOS_db_cache_v1';
@@ -13,11 +14,11 @@
   const cfg=()=>safe(()=>JSON.parse(localStorage.getItem(KEY)||'{}'),{});
   const cache=()=>safe(()=>JSON.parse(localStorage.getItem(CACHE)||'{}'),{});
   const writeCache=x=>localStorage.setItem(CACHE,JSON.stringify(x));
-  const enabled=()=>{const c=cfg();return !!(c.enabled&&c.url&&c.anonKey&&c.familyId);};
+  const enabled=()=>{const c=cfg();return !!(c.enabled&&c.url&&c.publishableKey&&c.familyId);};
 
   function headers(){
     const c=cfg();
-    return {'apikey':c.anonKey,'Authorization':'Bearer '+(c.accessToken||c.anonKey),'Content-Type':'application/json','Prefer':'return=representation'};
+    return {'apikey':c.publishableKey,'Authorization':'Bearer '+(c.accessToken||c.anonKey),'Content-Type':'application/json','Prefer':'return=representation'};
   }
   async function rest(path,options={}){
     const c=cfg();
@@ -116,12 +117,15 @@
     version:'1.0.0',
     status,
     configure:setConfig,
-    sync:async()=>{const ok=await pullCore();const c=cfg();c.lastSync=ok?new Date().toISOString():c.lastSync;localStorage.setItem(KEY,JSON.stringify(c));return ok;},
+    snapshot:backupLocalSnapshot,
+    sync:async()=>{await backupLocalSnapshot();const ok=await pullCore();const c=cfg();c.lastSync=ok?new Date().toISOString():c.lastSync;localStorage.setItem(KEY,JSON.stringify(c));return ok;},
     upsert,
     remove,
     getCache:cache
   };
 
   window.addEventListener('online',()=>{if(enabled())window.EducationOSData.sync().catch(()=>{});});
+  let timer=null;
+  window.addEventListener('educationOS:changed',()=>{if(!enabled())return;clearTimeout(timer);timer=setTimeout(()=>window.EducationOSData.sync().catch(()=>{}),1500);});
   setTimeout(()=>{if(enabled())window.EducationOSData.sync().catch(()=>{});},1200);
 })();
