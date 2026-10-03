@@ -419,6 +419,7 @@
    const childNav=document.querySelector('.nav button[data-page="学生完整档案"]');if(childNav)childNav.classList.add('active');
    const title=document.getElementById('pageTitle'),sub=document.getElementById('pageSub');if(title)title.textContent='学生完整档案';if(sub)sub.textContent=(s.name||'学生')+' · '+(s.schoolYear||'')+' · '+(s.grade||'');
  }
+ window.educationOSOpenStudent=showStudentProfile;
  function subjectListForYear(subjectText){const raw=String(subjectText||'').split(/[·,，、]/).map(x=>x.trim()).filter(Boolean);return raw.length?raw:['英语','数学','科学','母语'];}
  function showStudentYearProfile(id,year){
    const s=getStudentById(id);if(!s)return;
