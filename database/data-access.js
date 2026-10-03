@@ -203,10 +203,30 @@
     dsa_plans:{studentId:'student_id',academicYearId:'academic_year_id',schoolId:'school_id',createdAt:'created_at',updatedAt:'updated_at'},
     dsa_activities:{dsaPlanId:'dsa_plan_id',activityDate:'activity_date',createdAt:'created_at',updatedAt:'updated_at'}
   };
+  const IDMAP='educationOS_db_id_map_v1';
+  const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const idMaps=()=>safe(()=>JSON.parse(localStorage.getItem(IDMAP)||'{}'),{});
+  function remoteId(table,id){
+    if(!id)return null;
+    if(UUID.test(String(id)))return String(id);
+    const all=idMaps();all[table]=all[table]||{};
+    if(!all[table][id])all[table][id]=(crypto.randomUUID?crypto.randomUUID():id+'-'+Date.now());
+    localStorage.setItem(IDMAP,JSON.stringify(all));
+    return all[table][id];
+  }
+  function mappedForeign(table,key,value){
+    if(!value)return value;
+    const map={student_id:'students',course_id:'courses',package_id:'packages',teacher_id:'teachers',subject_id:'subject_master',lesson_id:'lessons',feedback_id:'teacher_feedback',driver_id:'drivers',vehicle_id:'vehicles',related_lesson_id:'lessons',academic_year_id:'academic_years',tuition_course_id:'courses',dsa_plan_id:'dsa_plans',school_id:'schools'};
+    return map[key]?remoteId(map[key],value):value;
+  }
   function mapForTable(table,row){
     const fields=TABLE_FIELDS[table]; if(!fields)return null;
     const aliases=ALIAS[table]||{}, out={};
-    Object.keys(row||{}).forEach(k=>{const dest=aliases[k]||k;if(fields.includes(dest)&&row[k]!==undefined)out[dest]=row[k];});
+    Object.keys(row||{}).forEach(k=>{
+      const dest=aliases[k]||k;
+      if(fields.includes(dest)&&row[k]!==undefined)out[dest]=mappedForeign(table,dest,row[k]);
+    });
+    if(row&&row.id)out.id=remoteId(table,row.id);
     return out;
   }
   async function pushLocalTable(table,rows){
@@ -214,17 +234,21 @@
     for(const row of rows){
       const remote=mapForTable(table,row); if(!remote)continue;
       remote.family_id=remote.family_id||cfg().familyId;
-      try{await upsert(table,remote);}catch(e){console.warn('上传失败:',table,row.id||'(new)',e);}
+      try{
+        const result=await upsert(table,remote);
+        const rid=Array.isArray(result)&&result[0]?.id;
+        if(rid&&row.id){const all=idMaps();all[table]=all[table]||{};all[table][row.id]=rid;localStorage.setItem(IDMAP,JSON.stringify(all));}
+      }catch(e){console.warn('上传失败:',table,row.id||'(new)',e);}
     }
   }
   async function pushAcademicYears(ss){
     for(const s of ss||[])for(const y of (s.academicYears||[])){
       if(!y.id)continue;
-      const remote={id:y.id,student_id:s.id,year_label:y.year||y.yearLabel,start_date:y.startDate||new Date().getFullYear()+'-01-01',end_date:y.endDate||new Date().getFullYear()+'-12-31',education_level:y.stage==='Secondary'?'secondary':y.stage==='JC'?'jc':'primary',grade_code:y.grade||'P1',pathway:y.path||null,school_name:y.school||null,class_name:y.className||null,notes:y.notes||null};
-      try{await upsert('academic_years',remote);}catch(e){console.warn('上传失败: academic_years',y.id,e);}
+      const remote={id:remoteId('academic_years',y.id),student_id:remoteId('students',s.id),year_label:y.year||y.yearLabel,start_date:y.startDate||new Date().getFullYear()+'-01-01',end_date:y.endDate||new Date().getFullYear()+'-12-31',education_level:y.stage==='Secondary'?'secondary':y.stage==='JC'?'jc':'primary',grade_code:y.grade||'P1',pathway:y.path||null,school_name:y.school||null,class_name:y.className||null,notes:y.notes||null};
+      try{await upsert('academic_years',remote).then(res=>{const rid=Array.isArray(res)&&res[0]?.id;if(rid){const all=idMaps();all.academic_years=all.academic_years||{};all.academic_years[y.id]=rid;localStorage.setItem(IDMAP,JSON.stringify(all));}});}catch(e){console.warn('上传失败: academic_years',y.id,e);}
       for(const name of Object.keys(y.subjectRecords||{})){
         const x=y.subjectRecords[name]||{}; if(!x.subjectId)continue;
-        try{await upsert('student_subjects',{id:x.id||undefined,academic_year_id:y.id,subject_id:x.subjectId,subject_name_snapshot:name,teacher_name:x.teacher||'',weekly_frequency:x.frequency||'',teaching_mode:x.mode||'',tuition_course_id:x.courseId||null});}catch(e){console.warn('上传失败: student_subjects',name,e);}
+        try{await upsert('student_subjects',{id:x.id?remoteId('student_subjects',x.id):undefined,academic_year_id:remoteId('academic_years',y.id),subject_id:remoteId('subject_master',x.subjectId),subject_name_snapshot:name,teacher_name:x.teacher||'',weekly_frequency:x.frequency||'',teaching_mode:x.mode||'',tuition_course_id:x.courseId||null});}catch(e){console.warn('上传失败: student_subjects',name,e);}
       }
     }
   }
