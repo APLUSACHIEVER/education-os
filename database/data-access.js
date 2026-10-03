@@ -287,6 +287,18 @@
     getCache:cache
   };
 
+  // 所有现有页面仍可继续使用 localStorage；这里统一拦截业务数据写入，自动进入数据库同步队列。
+  const _setItem=localStorage.setItem.bind(localStorage);
+  if(!window.__educationOSStorageBridge){
+    window.__educationOSStorageBridge=true;
+    localStorage.setItem=(key,value)=>{
+      _setItem(key,value);
+      if((key===REL||key===STU)&&enabled()&&!syncing){
+        clearTimeout(timer);
+        timer=setTimeout(()=>window.EducationOSData.sync().catch(()=>{}),600);
+      }
+    };
+  }
   window.addEventListener('online',()=>{if(enabled())window.EducationOSData.sync().catch(()=>{});});
   let timer=null;
   window.addEventListener('educationOS:changed',()=>{if(!enabled()||syncing)return;clearTimeout(timer);timer=setTimeout(()=>window.EducationOSData.sync().catch(()=>{}),1500);});
