@@ -665,7 +665,7 @@
   function showStudent(){const m=q('studentModal');if(!m)return;refreshStudentForm();m.style.display='block';document.body.style.overflow='hidden'}
   function hideStudent(){const m=q('studentModal');if(m)m.style.display='none';document.body.style.overflow=''}
   function saveFamily(e){e.preventDefault();e.stopImmediatePropagation();const v={name:q('familyNameInput')?.value.trim()||'',contact:q('familyContactInput')?.value.trim()||'',phone:q('familyPhoneInput')?.value.trim()||'',email:q('familyEmailInput')?.value.trim()||'',address:q('familyAddressInput')?.value.trim()||'',status:q('familyStatusInput')?.value||'正常',date:q('familyDateInput')?.value||'',note:q('familyNoteInput')?.value.trim()||''};localStorage.setItem('educationOS.familyProfile',JSON.stringify(v));if(q('familyNameDisplay'))q('familyNameDisplay').textContent=v.name||'未填写家庭名称';if(q('familyContactDisplay'))q('familyContactDisplay').textContent=v.contact||'未填写';if(q('familyStatusDisplay'))q('familyStatusDisplay').textContent=v.status;if(q('familyDateDisplay')){const d=v.date?new Date(v.date+'T00:00:00'):null;q('familyDateDisplay').textContent=d&&!isNaN(d)?d.getFullYear()+' 年 '+(d.getMonth()+1)+' 月 '+d.getDate()+' 日':'未填写'}hideFamily()}
-  function saveStudent(e){e.preventDefault();e.stopImmediatePropagation();const form=q('studentForm');if(!form)return;const d=Object.fromEntries(new FormData(form).entries());d.id='student_'+Date.now();d.createdAt=new Date().toISOString();let list=[];try{list=JSON.parse(localStorage.getItem('educationOS_students')||'[]')}catch(x){}d.academicYears=[{id:'academic_'+d.id+'_'+d.schoolYear,year:d.schoolYear,stage:d.stage,grade:d.grade,school:d.school,path:d.path,subjects:d.subjects,goal:d.goal,createdAt:new Date().toISOString()}];list.push(d);localStorage.setItem('educationOS_students',JSON.stringify(list));hideStudent();form.reset();refreshStudentForm();if(window.renderEducationStudents)window.renderEducationStudents();alert('学生档案已建立，并已显示在学生档案中。')}
+  function saveStudent(e){e.preventDefault();e.stopImmediatePropagation();const form=q('studentForm');if(!form)return;const d=Object.fromEntries(new FormData(form).entries());d.subjects=[...form.querySelectorAll('input[name="subjectChoice"]:checked')].map(x=>x.value).join(' · ');d.id='student_'+Date.now();d.createdAt=new Date().toISOString();let list=[];try{list=JSON.parse(localStorage.getItem('educationOS_students')||'[]')}catch(x){}d.academicYears=[{id:'academic_'+d.id+'_'+d.schoolYear,year:d.schoolYear,stage:d.stage,grade:d.grade,school:d.school,path:d.path,subjects:d.subjects,goal:d.goal,subjectRecords:{},createdAt:new Date().toISOString()}];list.push(d);localStorage.setItem('educationOS_students',JSON.stringify(list));hideStudent();form.reset();refreshStudentForm();if(window.renderEducationStudents)window.renderEducationStudents();window.dispatchEvent(new Event('educationOS:changed'));alert('学生档案已建立，并已显示在学生档案中。')}
   document.addEventListener('click',function(e){
     const ef=e.target.closest('#editFamilyBtn');if(ef){e.preventDefault();e.stopPropagation();showFamily();return}
     const af=e.target.closest('#addStudentBtn');if(af){e.preventDefault();e.stopPropagation();showStudent();return}
@@ -1074,8 +1074,18 @@
       const start=promptText('开始日期','2026-10-03');if(start===null)return;
       const duration=Number(prompt('每节课时长（小时）','1'));if(!duration||duration<=0)return;
       const p=packagePrompt(d,s);
-      d.courses.push({id:id('course'),studentId:s.id,subject,name,type,teacherId:t?.id||'',mode,schedule,start,duration,packageId:p?.id||'',status:'已安排',createdAt:new Date().toISOString()});
-      save(d);render();alert('课程已建立。');
+      const academicYearId=(s.academicYears||[]).find(y=>String(y.year)===String(s.schoolYear))?.id||'academic_'+s.id+'_'+s.schoolYear;
+      const courseId=id('course');
+      d.courses.push({id:courseId,studentId:String(s.id),academicYearId,subject,name,type,teacherId:t?.id||'',mode,schedule,start,duration,packageId:p?.id||'',status:'已安排',createdAt:new Date().toISOString()});
+      const yrs=Array.isArray(s.academicYears)?s.academicYears:[];
+      let yr=yrs.find(y=>String(y.id)===String(academicYearId)||String(y.year)===String(s.schoolYear));
+      if(!yr){yr={id:academicYearId,year:String(s.schoolYear),stage:s.stage,grade:s.grade,school:s.school,path:s.path,subjects:s.subjects||'',goal:s.goal||'',subjectRecords:{}};yrs.push(yr);}
+      yr.subjectRecords=yr.subjectRecords&&typeof yr.subjectRecords==='object'?yr.subjectRecords:{};
+      const subjectKey=String(subject||'').trim();
+      yr.subjectRecords[subjectKey]={...(yr.subjectRecords[subjectKey]||{}),course:name,courseId,teacherId:t?.id||'',packageId:p?.id||'',updatedAt:new Date().toISOString()};
+      s.academicYears=yrs;
+      save(d);const studentsList=JSON.parse(localStorage.getItem('educationOS_students')||'[]');const si=studentsList.findIndex(x=>String(x.id)===String(s.id));if(si>=0){studentsList[si]=s;localStorage.setItem('educationOS_students',JSON.stringify(studentsList));}
+      render();alert('课程已建立，并已连接到该学生的学年 / 科目档案。');
     }
     function addTeacher(){
       const name=promptText('老师姓名','');if(name===null||!name)return;
