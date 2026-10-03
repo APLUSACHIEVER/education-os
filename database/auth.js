@@ -16,6 +16,19 @@
     if(!r.ok)throw new Error(data.error_description||data.msg||data.message||'登录失败');
     return data;
   }
+  async function refreshSession(){
+    const c=cfg();
+    if(!c.refreshToken||!c.url||!c.publishableKey)return false;
+    try{
+      const data=await authRequest('token?grant_type=refresh_token',{refresh_token:c.refreshToken});
+      const cc=cfg();cc.accessToken=data.access_token;cc.refreshToken=data.refresh_token||cc.refreshToken;cc.accessTokenIssuedAt=Date.now();saveCfg(cc);
+      return true;
+    }catch(e){ return false; }
+  }
+  function tokenExpiredSoon(){
+    const c=cfg();
+    return !!(c.accessToken && c.accessTokenIssuedAt && Date.now()-c.accessTokenIssuedAt>45*60*1000);
+  }
   async function rpc(name,args,token){
     const c=cfg();
     const r=await fetch(base()+'/rest/v1/rpc/'+name,{method:'POST',headers:{'apikey':c.publishableKey,'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(args||{})});
@@ -50,6 +63,7 @@
       return;
     }
     if(c.accessToken){
+      if(tokenExpiredSoon() && !(await refreshSession())){ logout(); return; }
       try{
         const x=await context(c.accessToken);
         const families=x?.families||[];
@@ -71,10 +85,10 @@
     body.innerHTML='<form id="osLoginForm"><label class="label">邮箱</label><input id="osEmail" type="email" required style="width:100%;padding:11px;margin:6px 0 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text)"><label class="label">密码</label><input id="osPassword" type="password" required style="width:100%;padding:11px;margin:6px 0 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text)"><button class="primary" type="submit" style="width:100%">登录家庭账号</button></form><div id="osLoginError" class="label" style="margin-top:10px;color:var(--red)"></div>';
     document.getElementById('osLoginForm').onsubmit=async e=>{
       e.preventDefault();const err=document.getElementById('osLoginError');err.textContent='';
-      try{const data=await authRequest('token?grant_type=password',{email:document.getElementById('osEmail').value.trim(),password:document.getElementById('osPassword').value});const cc=cfg();cc.accessToken=data.access_token;cc.refreshToken=data.refresh_token||null;saveCfg(cc);await render();window.dispatchEvent(new Event('educationOS:changed'));}catch(x){err.textContent=x.message;}
+      try{const data=await authRequest('token?grant_type=password',{email:document.getElementById('osEmail').value.trim(),password:document.getElementById('osPassword').value});const cc=cfg();cc.accessToken=data.access_token;cc.refreshToken=data.refresh_token||null;cc.accessTokenIssuedAt=Date.now();saveCfg(cc);await render();window.dispatchEvent(new Event('educationOS:changed'));}catch(x){err.textContent=x.message;}
     };
   }
-  function logout(){const c=cfg();delete c.accessToken;delete c.refreshToken;delete c.familyId;c.enabled=false;saveCfg(c);render();}
+  function logout(){const c=cfg();delete c.accessToken;delete c.refreshToken;delete c.accessTokenIssuedAt;delete c.familyId;c.enabled=false;saveCfg(c);render();}
   function init(){
     const btn=document.getElementById('osAuthButton');if(btn)btn.onclick=open;
     window.EducationOSAuth={open,logout,context};
