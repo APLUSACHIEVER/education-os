@@ -55,7 +55,7 @@ dialog input,dialog select{width:100%}
   <div class="card"><h2>⚠️ 冲突检查</h2><div id="conf"></div></div>
   <div class="card"><h2>🗓 每周日程</h2><div class="scroll"><div class="week" id="week"></div></div>
     <div class="legend">红框＝同一学生时间重叠（必须调整）；橙色虚线＝不同学生同时有课（家长接送需注意）。点击卡片可编辑。</div></div>
-  <div class="card"><h2>💰 每月费用</h2><div class="scroll" id="fees"></div></div>
+  <div class="card"><h2>💰 课费包</h2><div class="scroll" id="fees"></div></div>
 </main>
 
 <dialog id="dlg"><div id="dlgBody"></div></dialog>
@@ -135,7 +135,7 @@ function openItem(id){
   <label>科目 / 活动名称</label><input id="f_name" value="${esc(it.name)}" placeholder="如：数学、钢琴">
   <label>星期</label><select id="f_day">${DAYS.map((d,i)=>`<option value="${i}" ${i===it.day?'selected':''}>${d}</option>`).join('')}</select>
   <label>开始 / 结束时间</label><div class="row"><input type="time" id="f_s" value="${it.s}" style="width:48%"><input type="time" id="f_e" value="${it.e}" style="width:48%"></div>
-  <label>每月费用（元，同一科目多天上课只填一次即可，其余留空）</label><input type="number" min="0" id="f_fee" value="${it.fee}">
+  <label>课费包（元，同一科目多天上课只填一次即可，其余留空）</label><input type="number" min="0" id="f_fee" value="${it.fee}">
   <label>备注（老师/地点）</label><input id="f_note" value="${esc(it.note)}">
   <div class="row" style="margin-top:14px;justify-content:space-between"><div>${id?'<button id="f_del">删除</button>':''}</div><div class="row"><button id="f_cancel">取消</button><button class="pri" id="f_ok">保存</button></div></div>`;
   $('dlg').showModal();
