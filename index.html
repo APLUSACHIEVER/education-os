@@ -2117,3 +2117,19 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 </body></html>
+<script><!-- add-student-final-click-fix -->
+(function(){
+  document.addEventListener('click',function(e){
+    const b=e.target&&e.target.closest?e.target.closest('#addStudentBtn'):null;
+    if(!b)return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    if(typeof window.educationOSNewStudent==='function'){
+      window.educationOSNewStudent();
+    }else{
+      const m=document.getElementById('studentModal');
+      if(m){m.style.display='block';m.style.zIndex='99999';document.body.style.overflow='hidden';}
+    }
+  },true);
+})();
+</script>
