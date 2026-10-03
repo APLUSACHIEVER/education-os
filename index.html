@@ -35,7 +35,7 @@ dialog::backdrop{background:#0006}
 label{display:block;margin:8px 0 2px;font-size:13px;color:var(--mut)}
 dialog input,dialog select{width:100%}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c);margin-right:4px}
-.legend{font-size:12px;color:var(--mut);margin-top:6px}.date-picker{margin-top:6px}.date-tools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.date-tools button{font-size:13px}.months{display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:10px}.month{border:1px solid var(--bd);border-radius:10px;padding:8px}.month-title{font-weight:700;margin-bottom:6px}.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.cal b{font-size:11px;color:var(--mut);text-align:center;padding:3px}.cal button{padding:6px 2px;font-size:12px}.cal button.on{background:var(--pri);border-color:var(--pri);color:#fff}.cal button.att{box-shadow:inset 0 -3px 0 #2f9e44}.cal button.cancel{opacity:.45;text-decoration:line-through}.summary-box{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}.summary-box>div{background:var(--bg);border-radius:9px;padding:8px;text-align:center}.summary-box strong{display:block;font-size:20px}.progress{height:8px;background:var(--bd);border-radius:8px;overflow:hidden;margin-top:8px}.progress i{display:block;height:100%;background:var(--pri)}@media(max-width:700px){.months{grid-template-columns:1fr}}@media(max-width:520px){.summary-box{grid-template-columns:repeat(3,1fr)}}
+.legend{font-size:12px;color:var(--mut);margin-top:6px}.week-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap}.week-range{font-weight:700;font-size:15px}.week-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.week-stat{background:var(--bg);border-radius:8px;padding:6px 10px;font-size:13px}.day.today{outline:2px solid var(--pri);outline-offset:-2px;border-radius:9px}.day h3 small{display:block;font-size:11px;font-weight:400}.date-picker{margin-top:6px}.date-tools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.date-tools button{font-size:13px}.months{display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:10px}.month{border:1px solid var(--bd);border-radius:10px;padding:8px}.month-title{font-weight:700;margin-bottom:6px}.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.cal b{font-size:11px;color:var(--mut);text-align:center;padding:3px}.cal button{padding:6px 2px;font-size:12px}.cal button.on{background:var(--pri);border-color:var(--pri);color:#fff}.cal button.att{box-shadow:inset 0 -3px 0 #2f9e44}.cal button.cancel{opacity:.45;text-decoration:line-through}.summary-box{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}.summary-box>div{background:var(--bg);border-radius:9px;padding:8px;text-align:center}.summary-box strong{display:block;font-size:20px}.progress{height:8px;background:var(--bd);border-radius:8px;overflow:hidden;margin-top:8px}.progress i{display:block;height:100%;background:var(--pri)}@media(max-width:700px){.months{grid-template-columns:1fr}}@media(max-width:520px){.summary-box{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
 <body>
@@ -53,8 +53,7 @@ dialog input,dialog select{width:100%}
   <div class="row" id="filter" style="margin-bottom:12px"></div>
 
   <div class="card"><h2>⚠️ 冲突检查</h2><div id="conf"></div></div>
-  <div class="card"><h2>🗓 每周日程</h2><div class="scroll"><div class="week" id="week"></div></div>
-    <div class="legend">红框＝同一学生时间重叠（必须调整）；橙色虚线＝不同学生同时有课（家长接送需注意）。点击卡片可编辑。</div></div>
+  <div class="card"><div class="bar" style="margin-bottom:8px"><h2>📅 全家周日程</h2><div class="row"><button id="prevWeek">← 上一周</button><button id="thisWeek">本周</button><button id="nextWeek">下一周 →</button></div></div><div class="week-head"><div class="week-range" id="weekRange"></div><div class="legend">默认显示全部孩子，可点击上方孩子筛选。</div></div><div class="week-stats" id="weekStats"></div><div class="scroll"><div class="week" id="week"></div></div><div class="legend">红框＝同一学生时间重叠（必须调整）；橙色虚线＝不同学生同时有课（家长接送需注意）。点击课程卡片可直接编辑。</div></div>
   <div class="card"><h2>💰 课费包</h2><div class="scroll" id="fees"></div></div>
 <div class="legend" style="text-align:center;margin:18px 0 6px">教育管家 · 2026.10.03</div>
 </main>
@@ -66,6 +65,7 @@ const DAYS=['周一','周二','周三','周四','周五','周六','周日'];
 const COLORS=['#3b6cf6','#e8590c','#2f9e44','#ae3ec9','#0c8599','#d6336c'];
 let db={students:[],items:[]};   // items: {id,stu,type,name,dates,s,e,fee,note,statusByDate:{date:'attended'|'leave'|'cancelled'}}
 let sel='all';
+let weekStart=startOfWeek(new Date());
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -76,6 +76,9 @@ function save(){try{localStorage.setItem('edu-butler',JSON.stringify(db))}catch(
 const stu=id=>db.students.find(s=>s.id===id);
 function getDays(i){return Array.isArray(i.days)&&i.days.length?i.days:[Number.isInteger(i.day)?i.day:0]}
 function pad(n){return String(n).padStart(2,'0')}
+function startOfWeek(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());const mon=(x.getDay()+6)%7;x.setDate(x.getDate()-mon);x.setHours(0,0,0,0);return x}
+function weekDates(){return DAYS.map((_,k)=>{const x=new Date(weekStart);x.setDate(x.getDate()+k);return iso(x.getFullYear(),x.getMonth()+1,x.getDate())})}
+function weekRangeText(){const a=weekDates(),x=parseDate(a[0]),y=parseDate(a[6]);return x.getFullYear()+'年'+(x.getMonth()+1)+'月'+x.getDate()+'日 – '+(y.getMonth()+1)+'月'+y.getDate()+'日'}
 function iso(y,m,d){return y+'-'+pad(m)+'-'+pad(d)}
 function parseDate(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
 function fmtDate(s){const [y,m,d]=s.split('-').map(Number);return y+'年'+m+'月'+d+'日'}
@@ -91,37 +94,53 @@ function dateColorClass(i,d){const st=statusOf(i,d);return st==='attended'?'att'
 function overlap(a,b){return a.s<b.e&&b.s<a.e}
 
 function conflicts(){
-  const bad=new Set(),warn=new Set(),msgs=[];
-  for(let d=0;d<7;d++){
-    const L=db.items.filter(i=>getDays(i).includes(d));
+  const bad=new Set(),warn=new Set(),msgs=[],seen=new Set();
+  const allDates=[...new Set(db.items.flatMap(i=>itemDates(i)))].sort();
+  for(const date of allDates){
+    const L=db.items.filter(i=>itemDates(i).includes(date));
     for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){
       const a=L[i],b=L[j];if(!overlap(a,b))continue;
-      const same=a.stu===b.stu,na=(stu(a.stu)||{}).name,nb=(stu(b.stu)||{}).name;
+      const same=a.stu===b.stu,na=(stu(a.stu)||{}).name||'?',nb=(stu(b.stu)||{}).name||'?';
+      const key=[date,a.id,b.id].sort().join('|');if(seen.has(key))continue;seen.add(key);
       (same?bad:warn).add(a.id);(same?bad:warn).add(b.id);
-      msgs.push({bad:same,t:`${DAYS[d]}：${same?na+' 的':na+' 与 '+nb+' 的'}「${a.name} ${a.s}-${a.e}」和「${b.name} ${b.s}-${b.e}」时间重叠${same?'（冲突）':'（接送注意）'}`});
+      msgs.push({bad:same,date,t:fmtDate(date)+'：'+(same?na+' 的':na+' 与 '+nb+' 的')+'「'+a.name+' '+a.s+'-'+a.e+'」和「'+b.name+' '+b.s+'-'+b.e+'」时间重叠'+(same?'（冲突）':'（接送注意）')});
     }
   }
-  msgs.sort((x,y)=>y.bad-x.bad);
+  msgs.sort((x,y)=>Number(y.bad)-Number(x.bad)||x.date.localeCompare(y.date));
   return{bad,warn,msgs};
 }
 
 function render(){
-  $('filter').innerHTML=`<button class="chip ${sel==='all'?'on':''}" data-s="all">全部</button>`+
-    db.students.map(s=>`<button class="chip ${sel===s.id?'on':''}" data-s="${s.id}"><span class="dot" style="--c:${s.color}"></span>${esc(s.name)}</button>`).join('');
+  $('filter').innerHTML='<button class="chip '+(sel==='all'?'on':'')+'" data-s="all">全部</button>'+
+    db.students.map(s=>'<button class="chip '+(sel===s.id?'on':'')+'" data-s="'+s.id+'"><span class="dot" style="--c:'+s.color+'"></span>'+esc(s.name)+'</button>').join('');
   const c=conflicts();
-  $('conf').innerHTML=c.msgs.length?c.msgs.map(m=>`<div class="alert ${m.bad?'bad':'warn'}">${esc(m.t)}</div>`).join(''):'<div class="ok">✅ 暂无冲突</div>';
+  $('conf').innerHTML=c.msgs.length?c.msgs.map(m=>'<div class="alert '+(m.bad?'bad':'warn')+'">'+esc(m.t)+'</div>').join(''):'<div class="ok">✅ 暂无冲突</div>';
+
+  const dates=weekDates(), today=iso(new Date().getFullYear(),new Date().getMonth()+1,new Date().getDate());
+  $('weekRange').textContent=weekRangeText();
   const vis=db.items.filter(i=>sel==='all'||i.stu===sel);
-  const byDay=DAYS.map((n,d)=>`<div class="day"><h3>${n}</h3>${vis.filter(i=>getDays(i).includes(d)).sort((a,b)=>a.s.localeCompare(b.s)).map(i=>{
-    const s=stu(i.stu)||{name:'?',color:'#888'},st=sessionStats(i),cls=c.bad.has(i.id)?'bad':c.warn.has(i.id)?'warn':'';
-    return `<div class="item ${cls}" style="--c:${s.color}" data-id="${i.id}"><b>${i.s}-${i.e} ${esc(i.name)}</b><small>${esc(s.name)} · ${i.type} · 已上 ${st.attended} / ${st.total} 节${i.fee?' · '+money(i.fee):''}${i.note?'<br>'+esc(i.note):''}</small></div>`;
-  }).join('')||'<div class="ok" style="text-align:center">—</div>'}</div>`).join('');
-  $('week').innerHTML=byDay;
+  const weekItems=vis.flatMap(i=>itemDates(i).filter(d=>dates.includes(d)).map(d=>({i,d})));
+  const weekActive=weekItems.filter(x=>statusOf(x.i,x.d)!=='cancelled');
+  const weekAtt=weekItems.filter(x=>statusOf(x.i,x.d)==='attended');
+  const weekBad=c.msgs.filter(m=>dates.includes(m.date)&&m.bad).length;
+  $('weekStats').innerHTML='<div class="week-stat">本周课程 <b>'+weekActive.length+'</b> 节</div><div class="week-stat">已上 <b>'+weekAtt.length+'</b> 节</div><div class="week-stat">待上 <b>'+Math.max(0,weekActive.length-weekAtt.length)+'</b> 节</div><div class="week-stat">'+(weekBad?'⚠️ 冲突':'✅ 无冲突')+' <b>'+weekBad+'</b></div>';
+
+  $('week').innerHTML=dates.map((date,d)=>{
+    const x=parseDate(date), list=weekItems.filter(x=>x.d===date).sort((a,b)=>a.i.s.localeCompare(b.i.s));
+    return '<div class="day '+(date===today?'today':'')+'"><h3>'+DAYS[d]+'<small>'+ (x.getMonth()+1)+'/'+x.getDate()+'</small></h3>'+
+      (list.map(({i,d})=>{
+        const s=stu(i.stu)||{name:'?',color:'#888'},st=sessionStats(i),status=statusOf(i,d),cls=c.bad.has(i.id)?'bad':c.warn.has(i.id)?'warn':'';
+        const sl={scheduled:'未上',attended:'已上',leave:'请假',cancelled:'取消'}[status]||'未上';
+        return '<div class="item '+cls+(status==='cancelled'?' cancel':'')+'" style="--c:'+s.color+'" data-id="'+i.id+'" data-date="'+d+'"><b>'+i.s+'-'+i.e+' '+esc(i.name)+'</b><small>'+esc(s.name)+' · '+i.type+' · '+sl+' · 剩余 '+st.remaining+' 节'+(i.fee?' · '+money(i.fee):'')+(i.note?'<br>'+esc(i.note):'')+'</small></div>';
+      }).join('')||'<div class="ok" style="text-align:center">—</div>')+'</div>';
+  }).join('');
+
   let h='<table><tr><th>学生</th><th>课程</th><th>进度</th><th class="n">课费包</th></tr>';
   const groups=new Map();
   vis.filter(i=>i.type==='补习'||i.fee>0).forEach(i=>{const k=i.stu+'|'+i.type+'|'+i.name;const o=groups.get(k)||{i,fee:0};o.fee=Math.max(o.fee,i.fee||0);groups.set(k,o)});
   let total=0;
-  [...groups.values()].sort((a,b)=>a.i.name.localeCompare(b.i.name)).forEach(o=>{const st=sessionStats(o.i);total+=o.fee;h+=`<tr><td>${esc((stu(o.i.stu)||{}).name)}</td><td>${esc(o.i.name)}</td><td>${st.attended} / ${st.total} 节 <span class="legend">（剩 ${st.remaining}）</span></td><td class="n">${money(o.fee)}</td></tr>`});
-  h+=`<tr class="tot"><td colspan="3">课费包合计</td><td class="n">${money(total)}</td></tr></table>`;
+  [...groups.values()].sort((a,b)=>a.i.name.localeCompare(b.i.name)).forEach(o=>{const st=sessionStats(o.i);total+=o.fee;h+='<tr><td>'+esc((stu(o.i.stu)||{}).name)+'</td><td>'+esc(o.i.name)+'</td><td>'+st.attended+' / '+st.total+' 节 <span class="legend">（剩 '+st.remaining+'）</span></td><td class="n">'+money(o.fee)+'</td></tr>'});
+  h+='<tr class="tot"><td colspan="3">课费包合计</td><td class="n">'+money(total)+'</td></tr></table>';
   $('fees').innerHTML=h||'<div class="ok">暂无课费包</div>';
 }
 // 课费包：同一学生+类型+名称只计算一次，多天上课共用同一个课费包
@@ -197,6 +216,9 @@ $('addBtn').onclick=()=>openItem();
 $('stuBtn').onclick=openStu;
 $('filter').onclick=e=>{const b=e.target.closest('[data-s]');if(b){sel=b.dataset.s;render()}};
 $('week').onclick=e=>{const b=e.target.closest('[data-id]');if(b)openItem(b.dataset.id)};
+$('prevWeek').onclick=()=>{weekStart=new Date(weekStart);weekStart.setDate(weekStart.getDate()-7);render()};
+$('thisWeek').onclick=()=>{weekStart=startOfWeek(new Date());render()};
+$('nextWeek').onclick=()=>{weekStart=new Date(weekStart);weekStart.setDate(weekStart.getDate()+7);render()};
 $('expBtn').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db)],{type:'application/json'}));a.download='教育管家备份.json';a.click()};
 $('impBtn').onclick=()=>$('impFile').click();
 $('impFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d.students)||!Array.isArray(d.items))throw 0;if(confirm('将覆盖当前数据，继续？')){db=d;sel='all';save();render()}}catch(x){alert('备份文件格式不正确')}};r.readAsText(f);e.target.value=''};
